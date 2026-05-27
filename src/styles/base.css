@@ -2551,40 +2551,71 @@ textarea {
 }
 
 .scene1-assessment-result-radar-layout {
-  display: grid;
-  grid-template-columns: 1fr 220px 1fr;
-  align-items: center;
-  gap: 4px;
+  display: flex;
+  justify-content: center;
   margin-top: 12px;
 }
 
-.scene1-assessment-result-radar-side {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.scene1-assessment-result-radar-stage {
+  position: relative;
+  width: min(100%, 296px);
+  height: 280px;
+  margin: 0 auto;
 }
 
-.scene1-assessment-result-radar-side.align-end {
-  align-items: flex-end;
-  text-align: right;
+.scene1-assessment-result-radar-metric {
+  position: absolute;
+  width: 92px;
+  text-align: center;
 }
 
 .scene1-assessment-result-radar-metric strong {
   display: block;
   color: #2f2430;
   font-size: 14px;
+  line-height: 1.35;
 }
 
 .scene1-assessment-result-radar-metric span {
   display: block;
-  margin-top: 6px;
+  margin-top: 4px;
   color: #ff4d88;
   font-size: 12px;
 }
 
 .scene1-assessment-result-radar-visual {
-  width: 220px;
-  height: 220px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 176px;
+  height: 176px;
+  transform: translate(-50%, -50%);
+}
+
+.scene1-assessment-result-radar-metric-top {
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.scene1-assessment-result-radar-metric-top-right {
+  right: 0;
+  top: 46px;
+}
+
+.scene1-assessment-result-radar-metric-bottom-right {
+  right: 8px;
+  bottom: 26px;
+}
+
+.scene1-assessment-result-radar-metric-bottom-left {
+  left: 8px;
+  bottom: 26px;
+}
+
+.scene1-assessment-result-radar-metric-top-left {
+  left: 0;
+  top: 46px;
 }
 
 .scene1-assessment-result-radar-visual svg {
@@ -2675,22 +2706,40 @@ textarea {
   padding: 16px;
 }
 
-@media (max-width: 390px) {
+@media (max-width: 430px) {
   .scene1-assessment-result-overview-card {
     grid-template-columns: 1fr;
   }
 
   .scene1-assessment-result-radar-layout {
-    grid-template-columns: 1fr;
-    justify-items: center;
+    margin-top: 10px;
   }
 
-  .scene1-assessment-result-radar-side,
-  .scene1-assessment-result-radar-side.align-end {
-    width: 100%;
-    align-items: flex-start;
-    text-align: left;
-    gap: 10px;
+  .scene1-assessment-result-radar-stage {
+    width: min(100%, 284px);
+    height: 264px;
+  }
+
+  .scene1-assessment-result-radar-metric {
+    width: 86px;
+  }
+
+  .scene1-assessment-result-radar-metric strong {
+    font-size: 13px;
+  }
+
+  .scene1-assessment-result-radar-visual {
+    width: 168px;
+    height: 168px;
+  }
+
+  .scene1-assessment-result-radar-metric-top-right {
+    top: 44px;
+  }
+
+  .scene1-assessment-result-radar-metric-bottom-right,
+  .scene1-assessment-result-radar-metric-bottom-left {
+    bottom: 22px;
   }
 }
 

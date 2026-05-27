@@ -260,6 +260,8 @@ type ResultRadarMetric = {
   score: number;
 };
 
+const radarMetricPositions = ['top', 'top-right', 'bottom-right', 'bottom-left', 'top-left'] as const;
+
 function getSeverityTone(severity: number): ResultBadgeTone {
   if (severity >= 2) {
     return 'orange';
@@ -520,33 +522,28 @@ function CompletionState({ answers }: { answers: Scene1AssessmentState['answers'
             <span className="scene1-assessment-result-toggle-chip">综合</span>
           </div>
           <div className="scene1-assessment-result-radar-layout">
-            <div className="scene1-assessment-result-radar-side">
-              {radarMetrics.slice(0, 2).map((item) => (
-                <div key={item.label} className="scene1-assessment-result-radar-metric">
+            <div className="scene1-assessment-result-radar-stage">
+              {radarMetrics.map((item, index) => (
+                <div
+                  key={item.label}
+                  className={`scene1-assessment-result-radar-metric scene1-assessment-result-radar-metric-${radarMetricPositions[index]}`}
+                >
                   <strong>{item.label}</strong>
                   <span>{`得分 ${item.score}`}</span>
                 </div>
               ))}
-            </div>
-            <div className="scene1-assessment-result-radar-visual" aria-hidden="true">
-              <svg viewBox="0 0 220 220">
-                <circle cx="110" cy="110" r="64" className="scene1-assessment-result-radar-ring" />
-                <circle cx="110" cy="110" r="46" className="scene1-assessment-result-radar-ring" />
-                <circle cx="110" cy="110" r="28" className="scene1-assessment-result-radar-ring" />
-                <path
-                  d="M110 46L170.87 90.22L147.64 161.78L72.36 161.78L49.13 90.22Z"
-                  className="scene1-assessment-result-radar-grid"
-                />
-                <path d={radarPath} className="scene1-assessment-result-radar-fill" />
-              </svg>
-            </div>
-            <div className="scene1-assessment-result-radar-side align-end">
-              {radarMetrics.slice(2, 5).map((item) => (
-                <div key={item.label} className="scene1-assessment-result-radar-metric">
-                  <strong>{item.label}</strong>
-                  <span>{`得分 ${item.score}`}</span>
-                </div>
-              ))}
+              <div className="scene1-assessment-result-radar-visual" aria-hidden="true">
+                <svg viewBox="0 0 220 220">
+                  <circle cx="110" cy="110" r="64" className="scene1-assessment-result-radar-ring" />
+                  <circle cx="110" cy="110" r="46" className="scene1-assessment-result-radar-ring" />
+                  <circle cx="110" cy="110" r="28" className="scene1-assessment-result-radar-ring" />
+                  <path
+                    d="M110 46L170.87 90.22L147.64 161.78L72.36 161.78L49.13 90.22Z"
+                    className="scene1-assessment-result-radar-grid"
+                  />
+                  <path d={radarPath} className="scene1-assessment-result-radar-fill" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>

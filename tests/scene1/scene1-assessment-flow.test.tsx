@@ -164,6 +164,15 @@ describe('scene1 assessment flow', () => {
     expect(screen.getByText('24 / 63')).toBeInTheDocument();
     expect(screen.getAllByText('中度综合征').length).toBeGreaterThan(0);
     expect(window.localStorage.getItem('scene1:kmi-score')).toBe('24');
+    const radarContainer = document.querySelector('.scene1-assessment-result-radar-stage');
+
+    expect(radarContainer).not.toBeNull();
+    expect(radarContainer?.querySelectorAll('.scene1-assessment-result-radar-metric')).toHaveLength(5);
+    expect(radarContainer?.querySelector('.scene1-assessment-result-radar-metric-top')).not.toBeNull();
+    expect(radarContainer?.querySelector('.scene1-assessment-result-radar-metric-top-right')).not.toBeNull();
+    expect(radarContainer?.querySelector('.scene1-assessment-result-radar-metric-bottom-right')).not.toBeNull();
+    expect(radarContainer?.querySelector('.scene1-assessment-result-radar-metric-bottom-left')).not.toBeNull();
+    expect(radarContainer?.querySelector('.scene1-assessment-result-radar-metric-top-left')).not.toBeNull();
     expect(screen.getByRole('button', { name: '上一步' })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: '返回' }).length).toBeGreaterThan(1);
     expect(screen.getByRole('button', { name: '进入围绝经期模式' })).toBeInTheDocument();
