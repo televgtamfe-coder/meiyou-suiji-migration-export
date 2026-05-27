@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ command }) => ({
   plugins: [react()],
-  base: '/',
+  base: './',
   test: {
     environment: 'jsdom',
     globals: true,
