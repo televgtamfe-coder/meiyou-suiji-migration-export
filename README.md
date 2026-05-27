@@ -75,3 +75,9 @@ npm run dev
 npm run build
 node scripts/build-standalone.js
 ```
+
+## Public Sharing
+
+- Use GitHub Pages as the only public sharing entry:
+  `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1`
+- Deployment notes: `DEPLOY_GITHUB_PAGES.md`
