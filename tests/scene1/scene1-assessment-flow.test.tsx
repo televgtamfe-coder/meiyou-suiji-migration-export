@@ -56,6 +56,63 @@ describe('scene1 assessment flow', () => {
     expect(screen.getByRole('button', { name: '记不清了' })).toHaveClass('active');
   }, 15000);
 
+  it('lets users pick birth date with direct year month day selectors', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/scene1']}>
+        <AppRouter />
+      </MemoryRouter>
+    );
+
+    await user.click(screen.getByRole('button', { name: '立即评估' }));
+    await user.click(screen.getByRole('button', { name: '下一步' }));
+
+    expect(screen.getByRole('combobox', { name: '出生年份' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: '出生月份' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: '出生日期日' })).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByRole('combobox', { name: '出生年份' }), '1984');
+    await user.selectOptions(screen.getByRole('combobox', { name: '出生月份' }), '05');
+    await user.selectOptions(screen.getByRole('combobox', { name: '出生日期日' }), '01');
+
+    expect(screen.getByLabelText('出生日期')).toHaveValue('1984-05-01');
+  });
+
+  it('lets users pick the last period date with direct year month day selectors', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/scene1']}>
+        <AppRouter />
+      </MemoryRouter>
+    );
+
+    await user.click(screen.getByRole('button', { name: '立即评估' }));
+    await user.click(screen.getByRole('button', { name: '下一步' }));
+
+    await user.selectOptions(screen.getByRole('combobox', { name: '出生年份' }), '1984');
+    await user.selectOptions(screen.getByRole('combobox', { name: '出生月份' }), '05');
+    await user.selectOptions(screen.getByRole('combobox', { name: '出生日期日' }), '01');
+    await user.type(screen.getByLabelText('身高 (cm)'), '165');
+    await user.type(screen.getByLabelText('体重 (kg)'), '58');
+    await user.click(screen.getByRole('button', { name: '下一步' }));
+
+    expect(screen.getByRole('combobox', { name: '最近月经年份' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: '最近月经月份' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: '最近月经日期' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' }));
+    await user.click(screen.getByRole('button', { name: '基本无变化，周期稳定' }));
+    await user.click(screen.getByRole('button', { name: '无明显变化' }));
+    await user.selectOptions(screen.getByRole('combobox', { name: '最近月经年份' }), '2026');
+    await user.selectOptions(screen.getByRole('combobox', { name: '最近月经月份' }), '03');
+    await user.selectOptions(screen.getByRole('combobox', { name: '最近月经日期' }), '08');
+
+    expect(screen.getByLabelText('4. 最近一次月经距离现在多久？')).toHaveValue('2026-03-08');
+    expect(screen.getByRole('button', { name: '下一步' })).toBeEnabled();
+  });
+
   it('removes the assessment title copy from the top header', async () => {
     const user = userEvent.setup();
 
@@ -157,6 +214,11 @@ describe('scene1 assessment flow', () => {
     await user.click(screen.getByRole('button', { name: '完成评估' }));
 
     expect(screen.getByText('评估已完成')).toBeInTheDocument();
+    expect(screen.getByText('围绝经期过渡早期')).toBeInTheDocument();
+    expect(screen.getByText('判断依据')).toBeInTheDocument();
+    expect(screen.getByText('年龄')).toBeInTheDocument();
+    expect(screen.getByText('末次月经')).toBeInTheDocument();
+    expect(screen.getByText('周期变化')).toBeInTheDocument();
     expect(screen.getByText('最终结果分析与判断')).toBeInTheDocument();
     expect(screen.getByText('KMI 指数评估')).toBeInTheDocument();
     expect(screen.getAllByText('骨健康与维生素D风险').length).toBeGreaterThan(0);

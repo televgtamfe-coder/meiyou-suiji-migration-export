@@ -1,4 +1,4 @@
-import { ChangeEvent } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { AssessmentFieldKey, AssessmentOption, getAssessmentStep } from '../assessmentSteps';
 import { Scene1AssessmentState } from '../assessmentState';
 import { getKmiScoreSummary, pickCompletedKmiAnswers } from '../kmiScoring';
@@ -23,7 +23,7 @@ type TextFieldProps = {
   label: string;
   value: string;
   onAnswer: (field: AssessmentFieldKey, value: string) => void;
-  type?: 'text' | 'date' | 'number';
+  type?: 'text' | 'number';
   placeholder?: string;
   suffix?: string;
 };
@@ -36,6 +36,9 @@ type DateChoiceFieldProps = {
   quickValue: string;
   options: AssessmentOption[];
   onAnswer: (field: AssessmentFieldKey, value: string) => void;
+  yearAriaLabel: string;
+  monthAriaLabel: string;
+  dayAriaLabel: string;
 };
 
 type KmiPrompt = {
@@ -58,6 +61,274 @@ const kmiPrompts: KmiPrompt[] = kmiRules.map((rule) => ({
 
 const kmiSetOnePrompts = kmiPrompts.slice(0, 6);
 const kmiSetTwoPrompts = kmiPrompts.slice(6);
+const currentYear = new Date().getFullYear();
+const dateYearOptions = Array.from({ length: currentYear - 1919 }, (_, index) => String(currentYear - index));
+const dateMonthOptions = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, '0'));
+
+function getDaysInMonth(year: number, month: number) {
+  return new Date(year, month, 0).getDate();
+}
+
+function parseDateParts(value: string) {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (!match) {
+    return { year: '', month: '', day: '' };
+  }
+
+  return {
+    year: match[1],
+    month: match[2],
+    day: match[3],
+  };
+}
+
+function buildDateValue(year: string, month: string, day: string) {
+  if (!year || !month || !day) {
+    return '';
+  }
+
+  const numericYear = Number(year);
+  const numericMonth = Number(month);
+  const maxDay = getDaysInMonth(numericYear, numericMonth);
+  const normalizedDay = String(Math.min(Number(day), maxDay)).padStart(2, '0');
+
+  return `${year}-${month}-${normalizedDay}`;
+}
+
+type StructuredDateFieldProps = Omit<TextFieldProps, 'type' | 'placeholder' | 'suffix'> & {
+  yearAriaLabel: string;
+  monthAriaLabel: string;
+  dayAriaLabel: string;
+  onValueChange?: (value: string) => void;
+};
+
+type ResultStageEvidence = {
+  label: string;
+  value: string;
+  detail: string;
+};
+
+type ResultStageSummary = {
+  title: string;
+  summary: string;
+  tone: ResultBadgeTone;
+  evidences: ResultStageEvidence[];
+};
+
+function parseDateString(value: string) {
+  const parts = parseDateParts(value);
+
+  if (!parts.year || !parts.month || !parts.day) {
+    return null;
+  }
+
+  return new Date(Number(parts.year), Number(parts.month) - 1, Number(parts.day));
+}
+
+function getAgeFromBirthDate(value: string, now = new Date()) {
+  const birthDate = parseDateString(value);
+
+  if (!birthDate) {
+    return null;
+  }
+
+  let age = now.getFullYear() - birthDate.getFullYear();
+  const hasHadBirthdayThisYear =
+    now.getMonth() > birthDate.getMonth() ||
+    (now.getMonth() === birthDate.getMonth() && now.getDate() >= birthDate.getDate());
+
+  if (!hasHadBirthdayThisYear) {
+    age -= 1;
+  }
+
+  return age;
+}
+
+function getDaysSinceDate(value: string, now = new Date()) {
+  const targetDate = parseDateString(value);
+
+  if (!targetDate) {
+    return null;
+  }
+
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+  const diff = now.getTime() - targetDate.getTime();
+
+  return Math.max(0, Math.floor(diff / millisecondsPerDay));
+}
+
+function formatLastPeriodValue(answers: Scene1AssessmentState['answers'], gapDays: number | null) {
+  if (answers.lastPeriodQuickOption === 'current-period') {
+    return '目前正处于经期';
+  }
+
+  if (answers.lastPeriodQuickOption === 'forgot') {
+    return '记不清了';
+  }
+
+  if (answers.lastPeriodQuickOption === 'not-applicable') {
+    return '暂未提供';
+  }
+
+  if (answers.lastPeriodDate && gapDays !== null) {
+    if (gapDays < 30) {
+      return `${answers.lastPeriodDate}（距今约 ${gapDays} 天）`;
+    }
+
+    const months = Math.floor(gapDays / 30);
+    return `${answers.lastPeriodDate}（距今约 ${months} 个月）`;
+  }
+
+  return '未填写';
+}
+
+function getCycleChangeValue(answers: Scene1AssessmentState['answers']) {
+  if (answers.cycleChange === 'shorter') {
+    return '周期较以前提前，波动超过 7 天';
+  }
+
+  if (answers.cycleChange === 'longer') {
+    return '周期延长，间隔明显拉长';
+  }
+
+  if (answers.cycleChange === 'same') {
+    return '周期整体规律，暂未见明显波动';
+  }
+
+  return '周期变化暂不明确';
+}
+
+function getStageSummary(
+  answers: Scene1AssessmentState['answers'],
+  kmiTotal: number,
+  now = new Date()
+): ResultStageSummary {
+  const age = getAgeFromBirthDate(answers.birthDate, now);
+  const lastPeriodGapDays = getDaysSinceDate(answers.lastPeriodDate, now);
+  const lastPeriodValue = formatLastPeriodValue(answers, lastPeriodGapDays);
+  const cycleChangeValue = getCycleChangeValue(answers);
+  const evidences: ResultStageEvidence[] = [
+    {
+      label: '年龄',
+      value: age === null ? '未填写' : `${age}岁`,
+      detail: '40-48 岁出现周期波动，更符合过渡阶段。',
+    },
+    {
+      label: '末次月经',
+      value: lastPeriodValue,
+      detail: '3-11 个月偏向过渡晚期，≥12 个月需结合年龄看绝经风险。',
+    },
+    {
+      label: '周期变化',
+      value: cycleChangeValue,
+      detail: '提前或推后超过 7 天，优先提示过渡早期。',
+    },
+  ];
+
+  if (age !== null && lastPeriodGapDays !== null && lastPeriodGapDays >= 365) {
+    if (age >= 48) {
+      return {
+        title: '绝经期',
+        summary: '年龄与末次月经间隔已达到文档中的绝经判定区间，更符合绝经期管理路径。',
+        tone: 'orange',
+        evidences,
+      };
+    }
+
+    if (age < 45) {
+      return {
+        title: '早发性绝经风险待排查',
+        summary: '末次月经已超过 12 个月，但年龄未达到常见绝经阶段，需优先排查卵巢功能异常。',
+        tone: 'orange',
+        evidences,
+      };
+    }
+  }
+
+  if (age !== null && lastPeriodGapDays !== null && lastPeriodGapDays >= 90) {
+    if (age >= 45) {
+      return {
+        title: '围绝经期过渡晚期',
+        summary: '末次月经距今已进入 3-11 个月区间，且年龄处于文档定义的高相关阶段，更符合围绝经期过渡晚期。',
+        tone: 'orange',
+        evidences,
+      };
+    }
+
+    return {
+      title: '异常闭经待排查',
+      summary: '末次月经间隔已明显拉长，但年龄尚轻，建议按异常闭经优先排查，同时继续按围绝经期路径观察。',
+      tone: 'orange',
+      evidences,
+    };
+  }
+
+  if (age !== null && lastPeriodGapDays !== null && lastPeriodGapDays >= 60 && age >= 40 && age <= 48) {
+    return {
+      title: '围绝经期过渡晚期',
+      summary: '末次月经间隔已接近 2-3 个月一次，符合文档中围绝经期过渡晚期的高相关信号。',
+      tone: 'orange',
+      evidences,
+    };
+  }
+
+  if (age !== null && (answers.cycleChange === 'shorter' || answers.cycleChange === 'longer')) {
+    if (age >= 40 && age <= 48) {
+      return {
+        title: '围绝经期过渡早期',
+        summary: '当前更符合“40-48 岁 + 周期波动超过 7 天”的文档规则，提示已进入围绝经期过渡早期。',
+        tone: 'pink',
+        evidences,
+      };
+    }
+
+    if (age < 40) {
+      return {
+        title: '周期变化待观察',
+        summary: '虽然存在周期波动，但年龄尚未进入文档中的高相关区间，建议持续观察记录完整性。',
+        tone: 'green',
+        evidences,
+      };
+    }
+  }
+
+  if (answers.cycleChange === 'same') {
+    if (age !== null && age < 45 && kmiTotal <= 6) {
+      return {
+        title: '未进入围绝经期',
+        summary: '周期仍规律，年龄与症状分值也未达到文档中的围绝经期触发条件，更偏向未进入围绝经期。',
+        tone: 'green',
+        evidences,
+      };
+    }
+
+    if (age !== null && age >= 45 && kmiTotal <= 6) {
+      return {
+        title: '未进入围绝经期（高风险关注）',
+        summary: '虽然目前周期仍规律、症状较轻，但年龄已进入高相关阶段，建议密切关注后续周期变化。',
+        tone: 'pink',
+        evidences,
+      };
+    }
+
+    if (kmiTotal >= 7) {
+      return {
+        title: '症状与周期不一致，阶段待确认',
+        summary: '症状评分已提示围绝经期表现，但周期信息仍相对平稳，建议继续记录或结合门诊进一步确认。',
+        tone: 'pink',
+        evidences,
+      };
+    }
+  }
+
+  return {
+    title: '阶段待继续观察',
+    summary: '现有年龄、末次月经与周期变化信息还不足以落到更明确的阶段结论，建议继续补充和连续记录。',
+    tone: 'pink',
+    evidences,
+  };
+}
 
 function TextField({
   field,
@@ -85,6 +356,211 @@ function TextField({
           onChange={(event: ChangeEvent<HTMLInputElement>) => onAnswer(field, event.target.value)}
         />
         {suffix ? <span className="scene1-assessment-input-suffix">{suffix}</span> : null}
+      </div>
+    </div>
+  );
+}
+
+function BirthDateField({
+  field,
+  label,
+  value,
+  onAnswer,
+}: Omit<TextFieldProps, 'type' | 'placeholder' | 'suffix'>) {
+  const id = `scene1-assessment-${field}`;
+  const parsedParts = parseDateParts(value);
+  const [year, setYear] = useState(parsedParts.year);
+  const [month, setMonth] = useState(parsedParts.month);
+  const [day, setDay] = useState(parsedParts.day);
+  const availableDays = year && month
+    ? Array.from({ length: getDaysInMonth(Number(year), Number(month)) }, (_, index) => String(index + 1).padStart(2, '0'))
+    : Array.from({ length: 31 }, (_, index) => String(index + 1).padStart(2, '0'));
+
+  useEffect(() => {
+    setYear(parsedParts.year);
+    setMonth(parsedParts.month);
+    setDay(parsedParts.day);
+  }, [parsedParts.day, parsedParts.month, parsedParts.year]);
+
+  const updateDatePart = (nextYear: string, nextMonth: string, nextDay: string) => {
+    setYear(nextYear);
+    setMonth(nextMonth);
+    setDay(nextDay);
+    onAnswer(field, buildDateValue(nextYear, nextMonth, nextDay));
+  };
+
+  return (
+    <div className="scene1-assessment-field">
+      <label className="scene1-assessment-label" htmlFor={id}>
+        {label}
+      </label>
+      <div className="scene1-assessment-input-wrap">
+        <input
+          id={id}
+          className="scene1-assessment-input"
+          type="text"
+          inputMode="numeric"
+          value={value}
+          placeholder="YYYY-MM-DD"
+          onChange={(event: ChangeEvent<HTMLInputElement>) => onAnswer(field, event.target.value)}
+        />
+      </div>
+      <div className="scene1-assessment-birthdate-grid">
+        <label className="scene1-assessment-select-field">
+          <span className="scene1-assessment-select-label">年份</span>
+          <select
+            className="scene1-assessment-input scene1-assessment-select"
+            aria-label="出生年份"
+            value={year}
+            onChange={(event) => updateDatePart(event.target.value, month, day || '01')}
+          >
+            <option value="">年</option>
+            {dateYearOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="scene1-assessment-select-field">
+          <span className="scene1-assessment-select-label">月份</span>
+          <select
+            className="scene1-assessment-input scene1-assessment-select"
+            aria-label="出生月份"
+            value={month}
+            onChange={(event) => updateDatePart(year, event.target.value, day || '01')}
+          >
+            <option value="">月</option>
+            {dateMonthOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="scene1-assessment-select-field">
+          <span className="scene1-assessment-select-label">日期</span>
+          <select
+            className="scene1-assessment-input scene1-assessment-select"
+            aria-label="出生日期日"
+            value={day}
+            onChange={(event) => updateDatePart(year, month, event.target.value)}
+          >
+            <option value="">日</option>
+            {availableDays.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function DateSelectorField({
+  field,
+  label,
+  value,
+  onAnswer,
+  yearAriaLabel,
+  monthAriaLabel,
+  dayAriaLabel,
+  onValueChange,
+}: StructuredDateFieldProps) {
+  const id = `scene1-assessment-${field}`;
+  const parsedParts = parseDateParts(value);
+  const [year, setYear] = useState(parsedParts.year);
+  const [month, setMonth] = useState(parsedParts.month);
+  const [day, setDay] = useState(parsedParts.day);
+  const availableDays = year && month
+    ? Array.from({ length: getDaysInMonth(Number(year), Number(month)) }, (_, index) => String(index + 1).padStart(2, '0'))
+    : Array.from({ length: 31 }, (_, index) => String(index + 1).padStart(2, '0'));
+
+  useEffect(() => {
+    setYear(parsedParts.year);
+    setMonth(parsedParts.month);
+    setDay(parsedParts.day);
+  }, [parsedParts.day, parsedParts.month, parsedParts.year]);
+
+  const syncValue = (nextValue: string) => {
+    onAnswer(field, nextValue);
+    onValueChange?.(nextValue);
+  };
+
+  const updateDatePart = (nextYear: string, nextMonth: string, nextDay: string) => {
+    setYear(nextYear);
+    setMonth(nextMonth);
+    setDay(nextDay);
+    syncValue(buildDateValue(nextYear, nextMonth, nextDay));
+  };
+
+  return (
+    <div className="scene1-assessment-field">
+      <label className="scene1-assessment-label" htmlFor={id}>
+        {label}
+      </label>
+      <div className="scene1-assessment-input-wrap">
+        <input
+          id={id}
+          className="scene1-assessment-input"
+          type="text"
+          inputMode="numeric"
+          value={value}
+          placeholder="YYYY-MM-DD"
+          onChange={(event: ChangeEvent<HTMLInputElement>) => syncValue(event.target.value)}
+        />
+      </div>
+      <div className="scene1-assessment-birthdate-grid">
+        <label className="scene1-assessment-select-field">
+          <span className="scene1-assessment-select-label">年份</span>
+          <select
+            className="scene1-assessment-input scene1-assessment-select"
+            aria-label={yearAriaLabel}
+            value={year}
+            onChange={(event) => updateDatePart(event.target.value, month, day || '01')}
+          >
+            <option value="">年</option>
+            {dateYearOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="scene1-assessment-select-field">
+          <span className="scene1-assessment-select-label">月份</span>
+          <select
+            className="scene1-assessment-input scene1-assessment-select"
+            aria-label={monthAriaLabel}
+            value={month}
+            onChange={(event) => updateDatePart(year, event.target.value, day || '01')}
+          >
+            <option value="">月</option>
+            {dateMonthOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="scene1-assessment-select-field">
+          <span className="scene1-assessment-select-label">日期</span>
+          <select
+            className="scene1-assessment-input scene1-assessment-select"
+            aria-label={dayAriaLabel}
+            value={day}
+            onChange={(event) => updateDatePart(year, month, event.target.value)}
+          >
+            <option value="">日</option>
+            {availableDays.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
     </div>
   );
@@ -124,24 +600,21 @@ function DateChoiceField({
   quickValue,
   options,
   onAnswer,
+  yearAriaLabel,
+  monthAriaLabel,
+  dayAriaLabel,
 }: DateChoiceFieldProps) {
-  const id = `scene1-assessment-${dateField}`;
-
   return (
     <div className="scene1-assessment-block">
-      <label className="scene1-assessment-label" htmlFor={id}>
-        {label}
-      </label>
-      <input
-        id={id}
-        className="scene1-assessment-input"
-        type="date"
+      <DateSelectorField
+        field={dateField}
+        label={label}
         value={dateValue}
-        onChange={(event: ChangeEvent<HTMLInputElement>) => {
-          const nextValue = event.target.value;
-          onAnswer(dateField, nextValue);
-          onAnswer(quickField, nextValue ? 'date-entered' : '');
-        }}
+        onAnswer={onAnswer}
+        yearAriaLabel={yearAriaLabel}
+        monthAriaLabel={monthAriaLabel}
+        dayAriaLabel={dayAriaLabel}
+        onValueChange={(nextValue) => onAnswer(quickField, nextValue ? 'date-entered' : '')}
       />
       <div className="scene1-assessment-chip-row">
         {options.map((option) => (
@@ -380,6 +853,7 @@ function buildRadarPath(scores: number[]) {
 
 function CompletionState({ answers }: { answers: Scene1AssessmentState['answers'] }) {
   const summary = getKmiScoreSummary(pickCompletedKmiAnswers(answers));
+  const stageSummary = getStageSummary(answers, summary.total);
   const progressWidth = `${(summary.total / summary.max) * 100}%`;
   const topSymptoms = summary.details
     .filter((item) => item.score > 0)
@@ -440,6 +914,32 @@ function CompletionState({ answers }: { answers: Scene1AssessmentState['answers'
 
   return (
     <div className="scene1-assessment-result-page">
+      <section className={`scene1-assessment-result-stage-card ${stageSummary.tone}`}>
+        <div className="scene1-assessment-result-stage-head">
+          <div>
+            <span className="scene1-assessment-result-stage-kicker">阶段判断</span>
+            <h2>{stageSummary.title}</h2>
+          </div>
+          <span className={`scene1-assessment-result-badge-mini ${stageSummary.tone}`}>文档规则映射</span>
+        </div>
+        <p>{stageSummary.summary}</p>
+        <div className="scene1-assessment-result-stage-evidence">
+          <div className="scene1-assessment-result-stage-evidence-head">
+            <strong>判断依据</strong>
+            <span>年龄 / 末次月经 / 周期变化</span>
+          </div>
+          <div className="scene1-assessment-result-stage-evidence-grid">
+            {stageSummary.evidences.map((item) => (
+              <div key={item.label} className="scene1-assessment-result-stage-evidence-item">
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+                <p>{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="scene1-assessment-result-hero">
         <div className="scene1-assessment-result-hero-top">
           <p className="scene1-assessment-kicker">评估已完成</p>
@@ -720,12 +1220,11 @@ export function AssessmentStepRenderer({
           </div>
 
           <div className="scene1-assessment-field-stack">
-            <TextField
+            <BirthDateField
               field="birthDate"
               label="出生日期"
               value={state.answers.birthDate}
               onAnswer={onAnswer}
-              type="date"
             />
 
             <div className="scene1-assessment-two-col">
@@ -804,6 +1303,9 @@ export function AssessmentStepRenderer({
           quickValue={state.answers.lastPeriodQuickOption}
           options={step.options?.lastPeriodQuickOption ?? []}
           onAnswer={onAnswer}
+          yearAriaLabel="最近月经年份"
+          monthAriaLabel="最近月经月份"
+          dayAriaLabel="最近月经日期"
         />
       </div>
     );
