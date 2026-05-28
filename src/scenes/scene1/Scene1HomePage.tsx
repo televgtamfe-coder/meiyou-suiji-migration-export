@@ -1,14 +1,8 @@
 import { readScene1KmiScore } from './kmiScoreStorage';
+import { scene1HomeFeeds } from './scene1HomeFeeds';
 import { Scene1BottomTabBar } from './components/Scene1BottomTabBar';
 import { PeriodDropletIcon } from './components/PeriodDropletIcon';
 import { StatusBar } from './components/StatusBar';
-
-const communityThumbnails = [
-  { id: 'img-1', className: 'scene1-home-post-thumbnail-a', lineCount: 8 },
-  { id: 'img-2', className: 'scene1-home-post-thumbnail-b', lineCount: 11 },
-  { id: 'img-3', className: 'scene1-home-post-thumbnail-c', lineCount: 12 },
-] as const;
-
 
 export function Scene1HomePage() {
   const kmiScore = readScene1KmiScore();
@@ -79,105 +73,105 @@ export function Scene1HomePage() {
               </button>
             </div>
           </section>
+          {scene1HomeFeeds.map((feed) => {
+            const isPrimaryFeed = feed.id === 'feed-primary';
 
-          <article className="scene1-home-post-card" data-testid="scene1-home-community-card">
-            <header className="scene1-home-post-head">
-              <div className="scene1-home-post-avatar" aria-hidden="true">
-                <div className="scene1-home-post-avatar-photo">
-                  <span className="scene1-home-post-avatar-hair" />
-                  <span className="scene1-home-post-avatar-face" />
-                  <span className="scene1-home-post-avatar-body" />
-                </div>
-              </div>
-              <div className="scene1-home-post-meta">
-                <strong>月月姐姐</strong>
-                <span>宝宝1岁</span>
-              </div>
-              <button type="button" className="scene1-home-post-more" aria-label="更多操作">
-                <span />
-                <span />
-                <span />
-              </button>
-            </header>
-
-            <div className="scene1-home-post-body">
-              <p className="scene1-home-post-text">
-                <span className="scene1-home-post-tag">#姐妹来帮忙</span>
-                <span className="scene1-home-post-text-copy">
-                  剖腹产一年，现在又怀孕了，关键是老公还结扎了都可以怀孕，都不知道敢不敢要，这个是万分之一的吧，有姐妹老...
-                </span>
-                <span className="scene1-home-post-text-link">全文</span>
-              </p>
-            </div>
-
-            <div className="scene1-home-post-images" aria-hidden="true">
-              {communityThumbnails.map((image) => (
-                <div
-                  key={image.id}
-                  data-testid="scene1-home-post-thumbnail"
-                  className={`scene1-home-post-thumbnail ${image.className}`}
-                >
-                  <div className="scene1-home-post-thumbnail-glow" />
-                  <div className="scene1-home-post-thumbnail-card">
-                    <div className="scene1-home-post-thumbnail-title">
-                      <span className="scene1-home-post-thumbnail-chip" />
-                      <span className="scene1-home-post-thumbnail-dot" />
-                      <span className="scene1-home-post-thumbnail-dot" />
-                    </div>
-                    <div className="scene1-home-post-thumbnail-lines">
-                      {Array.from({ length: image.lineCount }).map((_, lineIndex) => (
-                        <i key={`${image.id}-line-${lineIndex}`} />
+            return (
+              <article
+                key={feed.id}
+                className={`scene1-home-post-card${isPrimaryFeed ? '' : ' scene1-home-post-card-secondary'}`}
+                data-testid={isPrimaryFeed ? 'scene1-home-community-card' : undefined}
+              >
+                <header className="scene1-home-post-head">
+                  <div
+                    className={`scene1-home-post-avatar${feed.avatarStyle === 'secondary' ? ' scene1-home-post-avatar-secondary' : ''}`}
+                    aria-hidden="true"
+                  >
+                    <div className="scene1-home-post-avatar-photo" style={{ background: 'none' }}>
+                      {feed.avatarImages.map((image, imageIndex) => (
+                        <img
+                          key={`${feed.id}-avatar-${imageIndex}`}
+                          src={image}
+                          alt=""
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                        />
                       ))}
                     </div>
                   </div>
+                  <div className="scene1-home-post-meta">
+                    <strong>{feed.author}</strong>
+                    <span>{isPrimaryFeed ? feed.subtitle : feed.authorNote ?? feed.subtitle}</span>
+                  </div>
+                  {isPrimaryFeed ? (
+                    <button type="button" className="scene1-home-post-more" aria-label="更多操作">
+                      <span />
+                      <span />
+                      <span />
+                    </button>
+                  ) : null}
+                </header>
+
+                <div className={`scene1-home-post-body${isPrimaryFeed ? '' : ' scene1-home-post-body-secondary'}`}>
+                  <p className={`scene1-home-post-text${isPrimaryFeed ? '' : ' scene1-home-post-text-secondary'}`}>
+                    {feed.tag ? <span className="scene1-home-post-tag">{feed.tag}</span> : null}
+                    {isPrimaryFeed ? <span className="scene1-home-post-text-copy">{feed.body}</span> : feed.body}
+                    {feed.expandLabel ? <span className="scene1-home-post-text-link">{feed.expandLabel}</span> : null}
+                  </p>
                 </div>
-              ))}
-            </div>
 
-            <div className="scene1-home-post-quote">
-              <p>
-                <span className="scene1-home-post-quote-tag">热评</span>
-                <span className="scene1-home-post-quote-copy">我有个邻居大哥结扎后，他媳妇还真怀了，当时还闹了乌龙。</span>
-              </p>
-            </div>
+                {feed.images?.length ? (
+                  <div className="scene1-home-post-images" aria-hidden="true">
+                    {feed.images.map((image, imageIndex) => (
+                      <img
+                        key={`${feed.id}-image-${imageIndex}`}
+                        src={image}
+                        alt=""
+                        data-testid="scene1-home-feed-image"
+                        className={`scene1-home-post-thumbnail ${
+                          ['scene1-home-post-thumbnail-a', 'scene1-home-post-thumbnail-b', 'scene1-home-post-thumbnail-c'][imageIndex] ?? ''
+                        }`.trim()}
+                        style={{ display: 'block', width: '100%', height: '210px', objectFit: 'cover' }}
+                      />
+                    ))}
+                  </div>
+                ) : null}
 
-            <footer className="scene1-home-post-footer">
-              <span className="scene1-home-post-footer-metric">
-                <span className="scene1-home-post-footer-chat" aria-hidden="true">
-                  <i />
-                  <i />
-                  <span className="scene1-home-post-footer-chat-bubble" />
-                </span>
-                <span>106</span>
-              </span>
-              <span className="scene1-home-post-footer-metric">
-                <span className="scene1-home-post-footer-heart" aria-hidden="true">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 20.3 4.9 13.5a4.6 4.6 0 0 1 0-6.7 4.9 4.9 0 0 1 6.9 0l.2.2.2-.2a4.9 4.9 0 0 1 6.9 0 4.6 4.6 0 0 1 0 6.7L12 20.3Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-                  </svg>
-                </span>
-                <span>12</span>
-              </span>
-            </footer>
-          </article>
+                {feed.hotCommentLabel && feed.hotComment ? (
+                  <div className="scene1-home-post-quote">
+                    <p>
+                      <span className="scene1-home-post-quote-tag">{feed.hotCommentLabel}</span>
+                      <span className="scene1-home-post-quote-copy">{feed.hotComment}</span>
+                    </p>
+                  </div>
+                ) : null}
 
-          <article className="scene1-home-post-card scene1-home-post-card-secondary">
-            <header className="scene1-home-post-head">
-              <div className="scene1-home-post-avatar scene1-home-post-avatar-secondary" aria-hidden="true">
-                草
-              </div>
-              <div className="scene1-home-post-meta">
-                <strong>草莓牛奶王子</strong>
-                <span>宝宝妈</span>
-              </div>
-            </header>
-
-            <div className="scene1-home-post-body scene1-home-post-body-secondary">
-              <p className="scene1-home-post-text scene1-home-post-text-secondary">
-                晒晒我的备孕吃啥 和 牛牛暑研孕牛同学。我们是...
-              </p>
-            </div>
-          </article>
+                <footer className="scene1-home-post-footer">
+                  <span className="scene1-home-post-footer-metric">
+                    <span className="scene1-home-post-footer-chat" aria-hidden="true">
+                      <i />
+                      <i />
+                      <span className="scene1-home-post-footer-chat-bubble" />
+                    </span>
+                    <span>{feed.comments}</span>
+                  </span>
+                  <span className="scene1-home-post-footer-metric">
+                    <span className="scene1-home-post-footer-heart" aria-hidden="true">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 20.3 4.9 13.5a4.6 4.6 0 0 1 0-6.7 4.9 4.9 0 0 1 6.9 0l.2.2.2-.2a4.9 4.9 0 0 1 6.9 0 4.6 4.6 0 0 1 0 6.7L12 20.3Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                    <span>{feed.likes}</span>
+                  </span>
+                </footer>
+              </article>
+            );
+          })}
         </main>
 
         <button type="button" className="scene1-home-fab" aria-label="发布">
