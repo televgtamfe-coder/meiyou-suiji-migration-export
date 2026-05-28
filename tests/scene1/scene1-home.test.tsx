@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
@@ -55,5 +55,18 @@ describe('scene1 home first-screen fidelity', () => {
     expect(homeText).toContain('strokeWidth="1.8"');
     expect(homeText).toContain('strokeWidth="1.45"');
     expect(homeText).toContain('viewBox="0 0 20 20"');
+  });
+
+  it('keeps home feed assets lightweight enough for mobile delivery and marks feed images for deferred decoding', () => {
+    const homeText = readFileSync(resolve(process.cwd(), 'src/scenes/scene1/Scene1HomePage.tsx'), 'utf8');
+    const feedImage1 = statSync(resolve(process.cwd(), 'src/assets/scene1-home/feed-image-1.webp'));
+    const feedImage2 = statSync(resolve(process.cwd(), 'src/assets/scene1-home/feed-image-2.webp'));
+    const feedImage3 = statSync(resolve(process.cwd(), 'src/assets/scene1-home/feed-image-3.webp'));
+
+    expect(feedImage1.size).toBeLessThan(140 * 1024);
+    expect(feedImage2.size).toBeLessThan(160 * 1024);
+    expect(feedImage3.size).toBeLessThan(90 * 1024);
+    expect(homeText).toContain('loading="lazy"');
+    expect(homeText).toContain('decoding="async"');
   });
 });

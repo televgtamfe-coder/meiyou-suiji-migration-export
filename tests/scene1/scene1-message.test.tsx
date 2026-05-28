@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
@@ -41,5 +41,20 @@ describe('scene1 message page', () => {
     const cssText = readFileSync(resolve(process.cwd(), 'src/styles/base.css'), 'utf8');
 
     expect(cssText).toMatch(/\.scene1-message-page\s*\{[^}]*position:\s*relative;[^}]*width:\s*100%;/);
+  });
+
+  it('keeps message avatars lightweight enough for mobile delivery and marks decorative images for deferred decoding', () => {
+    const messageText = readFileSync(resolve(process.cwd(), 'src/scenes/scene1/Scene1MessagePage.tsx'), 'utf8');
+    const proyaBase = statSync(
+      resolve(process.cwd(), 'src/assets/scene1-message/714d429f0df00b478440e56c93bb438fc6f79e52.webp')
+    );
+    const youziSauceGlyph = statSync(
+      resolve(process.cwd(), 'src/assets/scene1-message/584d3a10c7e3bc7b7039a10a67995890c5287891.webp')
+    );
+
+    expect(proyaBase.size).toBeLessThan(20 * 1024);
+    expect(youziSauceGlyph.size).toBeLessThan(50 * 1024);
+    expect(messageText).toContain('loading="lazy"');
+    expect(messageText).toContain('decoding="async"');
   });
 });

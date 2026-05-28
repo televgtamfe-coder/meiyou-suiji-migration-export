@@ -2,7 +2,7 @@ import noticeIcon from '../../assets/scene1-message/Frame_18_7257.png';
 import avatarXiaoyouzi from '../../assets/scene1-message/4f6290544997252e8640034867b53086d8c03a97.png';
 import avatarEsteeLauder from '../../assets/scene1-message/bf7226d0912d3b8099dbcd3f8627e4d55a9c49d1.png';
 import avatarBabyDiaryGlyph from '../../assets/scene1-message/_1.png';
-import avatarProyaBase from '../../assets/scene1-message/714d429f0df00b478440e56c93bb438fc6f79e52.png';
+import avatarProyaBase from '../../assets/scene1-message/714d429f0df00b478440e56c93bb438fc6f79e52.webp';
 import avatarProyaOverlay from '../../assets/scene1-message/19884c9b3452a1b7ce76ab95b9b23fb02c77f7ba.png';
 import avatarTataCircleBase from '../../assets/scene1-message/Ellipse14.png';
 import avatarTataCircleGlyph from '../../assets/scene1-message/Group174.png';
@@ -11,7 +11,7 @@ import avatarYouziStreetGlyph from '../../assets/scene1-message/Boolean_operatio
 import avatarInteractionBase from '../../assets/scene1-message/Ellipse13.png';
 import avatarInteractionGlyph from '../../assets/scene1-message/Boolean_operation_2_245.png';
 import avatarYouziSauceTexture from '../../assets/scene1-message/d96cb2b92907e3ec2c15d129afa784095a63a23a.png';
-import avatarYouziSauceGlyph from '../../assets/scene1-message/584d3a10c7e3bc7b7039a10a67995890c5287891.png';
+import avatarYouziSauceGlyph from '../../assets/scene1-message/584d3a10c7e3bc7b7039a10a67995890c5287891.webp';
 import { Scene1BottomTabBar } from './components/Scene1BottomTabBar';
 import { StatusBar } from './components/StatusBar';
 
@@ -94,14 +94,29 @@ function MessageAvatar({ item }: { item: MessageItem }) {
   if (item.avatar === 'image') {
     const src = item.id === 'xiaoyouzi' ? avatarXiaoyouzi : avatarEsteeLauder;
 
-    return <img src={src} alt="" aria-hidden="true" className="scene1-message-avatar-image" />;
+    return (
+      <img
+        src={src}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        decoding="async"
+        className="scene1-message-avatar-image"
+      />
+    );
   }
 
   if (item.avatar === 'babyDiary') {
     return (
       <span className="scene1-message-avatar-baby-diary" aria-hidden="true">
         <span className="scene1-message-avatar-baby-diary-bg" />
-        <img src={avatarBabyDiaryGlyph} alt="" className="scene1-message-avatar-baby-diary-glyph" />
+        <img
+          src={avatarBabyDiaryGlyph}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="scene1-message-avatar-baby-diary-glyph"
+        />
       </span>
     );
   }
@@ -109,8 +124,14 @@ function MessageAvatar({ item }: { item: MessageItem }) {
   if (item.avatar === 'proya') {
     return (
       <span className="scene1-message-avatar-proya" aria-hidden="true">
-        <img src={avatarProyaBase} alt="" className="scene1-message-avatar-proya-base" />
-        <img src={avatarProyaOverlay} alt="" className="scene1-message-avatar-proya-overlay" />
+        <img src={avatarProyaBase} alt="" loading="lazy" decoding="async" className="scene1-message-avatar-proya-base" />
+        <img
+          src={avatarProyaOverlay}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="scene1-message-avatar-proya-overlay"
+        />
       </span>
     );
   }
@@ -118,8 +139,14 @@ function MessageAvatar({ item }: { item: MessageItem }) {
   if (item.avatar === 'tataCircle') {
     return (
       <span className="scene1-message-avatar-round" aria-hidden="true">
-        <img src={avatarTataCircleBase} alt="" className="scene1-message-avatar-round-base" />
-        <img src={avatarTataCircleGlyph} alt="" className="scene1-message-avatar-round-glyph scene1-message-avatar-round-glyph-tata" />
+        <img src={avatarTataCircleBase} alt="" loading="lazy" decoding="async" className="scene1-message-avatar-round-base" />
+        <img
+          src={avatarTataCircleGlyph}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="scene1-message-avatar-round-glyph scene1-message-avatar-round-glyph-tata"
+        />
       </span>
     );
   }
@@ -128,8 +155,20 @@ function MessageAvatar({ item }: { item: MessageItem }) {
     return (
       <span className="scene1-message-avatar-youzi-sauce" aria-hidden="true">
         <span className="scene1-message-avatar-youzi-sauce-bg" />
-        <img src={avatarYouziSauceTexture} alt="" className="scene1-message-avatar-youzi-sauce-texture" />
-        <img src={avatarYouziSauceGlyph} alt="" className="scene1-message-avatar-youzi-sauce-glyph" />
+        <img
+          src={avatarYouziSauceTexture}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="scene1-message-avatar-youzi-sauce-texture"
+        />
+        <img
+          src={avatarYouziSauceGlyph}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="scene1-message-avatar-youzi-sauce-glyph"
+        />
       </span>
     );
   }
@@ -137,10 +176,12 @@ function MessageAvatar({ item }: { item: MessageItem }) {
   if (item.avatar === 'interaction') {
     return (
       <span className="scene1-message-avatar-round" aria-hidden="true">
-        <img src={avatarInteractionBase} alt="" className="scene1-message-avatar-round-base" />
+        <img src={avatarInteractionBase} alt="" loading="lazy" decoding="async" className="scene1-message-avatar-round-base" />
         <img
           src={avatarInteractionGlyph}
           alt=""
+          loading="lazy"
+          decoding="async"
           className="scene1-message-avatar-round-glyph scene1-message-avatar-round-glyph-interaction"
         />
       </span>
@@ -149,10 +190,12 @@ function MessageAvatar({ item }: { item: MessageItem }) {
 
   return (
     <span className="scene1-message-avatar-round" aria-hidden="true">
-      <img src={avatarYouziStreetBase} alt="" className="scene1-message-avatar-round-base" />
+      <img src={avatarYouziStreetBase} alt="" loading="lazy" decoding="async" className="scene1-message-avatar-round-base" />
       <img
         src={avatarYouziStreetGlyph}
         alt=""
+        loading="lazy"
+        decoding="async"
         className="scene1-message-avatar-round-glyph scene1-message-avatar-round-glyph-street"
       />
     </span>
@@ -176,7 +219,14 @@ export function Scene1MessagePage() {
             <p>打开通知，及时接收重要消息。</p>
             <button type="button">去开启</button>
           </div>
-          <img src={noticeIcon} alt="" aria-hidden="true" className="scene1-message-notice-icon" />
+          <img
+            src={noticeIcon}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            className="scene1-message-notice-icon"
+          />
         </section>
 
         <main className="scene1-message-list" data-testid="scene1-message-list">

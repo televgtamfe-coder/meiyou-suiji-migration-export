@@ -3,9 +3,9 @@ import avatarPrimaryBase from '../../assets/scene1-home/avatar-primary-base.png'
 import avatarPrimaryOverlay from '../../assets/scene1-home/avatar-primary-overlay.png';
 import avatarFrameSecondary from '../../assets/scene1-home/avatar-frame-secondary.png';
 import avatarFrameTertiary from '../../assets/scene1-home/avatar-frame-tertiary.png';
-import feedImage1 from '../../assets/scene1-home/feed-image-1.png';
-import feedImage2 from '../../assets/scene1-home/feed-image-2.png';
-import feedImage3 from '../../assets/scene1-home/feed-image-3.png';
+import feedImage1 from '../../assets/scene1-home/feed-image-1.webp';
+import feedImage2 from '../../assets/scene1-home/feed-image-2.webp';
+import feedImage3 from '../../assets/scene1-home/feed-image-3.webp';
 
 export type Scene1HomeFeed = {
   id: string;

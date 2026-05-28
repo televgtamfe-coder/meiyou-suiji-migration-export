@@ -94,6 +94,8 @@ export function Scene1HomePage() {
                           key={`${feed.id}-avatar-${imageIndex}`}
                           src={image}
                           alt=""
+                          loading="lazy"
+                          decoding="async"
                           className={`scene1-home-post-avatar-image scene1-home-post-avatar-image-${imageIndex + 1}`}
                         />
                       ))}
@@ -125,7 +127,14 @@ export function Scene1HomePage() {
                   <div className="scene1-home-post-images" aria-hidden="true">
                     {feed.images.map((image, imageIndex) => (
                       <div key={`${feed.id}-image-${imageIndex}`} className="scene1-home-post-image-frame">
-                        <img src={image} alt="" data-testid="scene1-home-feed-image" className="scene1-home-post-image" />
+                        <img
+                          src={image}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          data-testid="scene1-home-feed-image"
+                          className="scene1-home-post-image"
+                        />
                       </div>
                     ))}
                   </div>
