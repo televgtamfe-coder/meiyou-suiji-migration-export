@@ -76,7 +76,7 @@ describe('scene1 tabbar fidelity', () => {
     await user.click(screen.getByRole('button', { name: '我的' }));
 
     expect(screen.getByTestId('scene1-my-shell')).toBeInTheDocument();
-    expect(screen.getByTestId('scene1-my-placeholder')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-my-header')).toBeInTheDocument();
   });
 
   it('anchors the bottom tabbar inside the phone shell instead of the viewport', () => {
@@ -85,6 +85,18 @@ describe('scene1 tabbar fidelity', () => {
     expect(cssText).toContain('.prototype-tabbar');
     expect(cssText).not.toContain('.prototype-tabbar {\n  position: fixed;');
     expect(cssText).not.toContain('padding: 8px 0 calc(env(safe-area-inset-bottom, 8px) + 8px);');
-    expect(cssText).toContain('padding: 8px 0 8px;');
+    expect(cssText).toContain('height: 49px;');
+    expect(cssText).toContain('padding: 0;');
+  });
+
+  it('uses the record-page bottom tab sizing as the shared standard across scene1 tabs', () => {
+    const cssText = readFileSync(resolve(process.cwd(), 'src/styles/base.css'), 'utf8');
+
+    expect(cssText).not.toContain('.scene1-home-tabbar {\n  height: 83px;');
+    expect(cssText).not.toContain('.scene1-my-tabbar {\n  height: 83px;');
+    expect(cssText).not.toContain('.scene1-message-tabbar {\n  height: 83px;');
+    expect(cssText).not.toContain('.scene1-home-tabbar .scene1-tab {');
+    expect(cssText).not.toContain('.scene1-home-tabbar .scene1-tab-icon {');
+    expect(cssText).not.toContain('.scene1-home-tabbar .scene1-tab-label {');
   });
 });

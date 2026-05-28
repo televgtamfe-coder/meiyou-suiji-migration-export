@@ -22,7 +22,7 @@ describe('scene1 home first-screen fidelity', () => {
     expect(screen.getByText('KMI指数')).toBeInTheDocument();
     expect(screen.getByText('6分')).toBeInTheDocument();
     expect(screen.getByText('月月姐姐')).toBeInTheDocument();
-    expect(screen.getByText('宝宝1岁')).toBeInTheDocument();
+    expect(screen.getAllByText('宝宝1岁')).toHaveLength(3);
     expect(screen.getByText('#姐妹来帮忙')).toBeInTheDocument();
     expect(screen.getByText('全文')).toBeInTheDocument();
     expect(screen.getByText('热评')).toBeInTheDocument();

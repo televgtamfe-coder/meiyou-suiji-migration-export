@@ -73,7 +73,8 @@ export function Scene1HomePage() {
               </button>
             </div>
           </section>
-          {scene1HomeFeeds.map((feed) => {
+          <section className="scene1-home-feed-list" data-testid="scene1-home-feed-list">
+            {scene1HomeFeeds.map((feed) => {
             const isPrimaryFeed = feed.id === 'feed-primary';
 
             return (
@@ -87,26 +88,21 @@ export function Scene1HomePage() {
                     className={`scene1-home-post-avatar${feed.avatarStyle === 'secondary' ? ' scene1-home-post-avatar-secondary' : ''}`}
                     aria-hidden="true"
                   >
-                    <div className="scene1-home-post-avatar-photo" style={{ background: 'none' }}>
+                    <div className="scene1-home-post-avatar-photo">
                       {feed.avatarImages.map((image, imageIndex) => (
                         <img
                           key={`${feed.id}-avatar-${imageIndex}`}
                           src={image}
                           alt=""
-                          style={{
-                            position: 'absolute',
-                            inset: 0,
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                          }}
+                          className={`scene1-home-post-avatar-image scene1-home-post-avatar-image-${imageIndex + 1}`}
                         />
                       ))}
                     </div>
                   </div>
                   <div className="scene1-home-post-meta">
                     <strong>{feed.author}</strong>
-                    <span>{isPrimaryFeed ? feed.subtitle : feed.authorNote ?? feed.subtitle}</span>
+                    <span>{feed.subtitle}</span>
+                    {!isPrimaryFeed && feed.authorNote ? <span className="scene1-home-post-meta-note">{feed.authorNote}</span> : null}
                   </div>
                   {isPrimaryFeed ? (
                     <button type="button" className="scene1-home-post-more" aria-label="更多操作">
@@ -128,16 +124,9 @@ export function Scene1HomePage() {
                 {feed.images?.length ? (
                   <div className="scene1-home-post-images" aria-hidden="true">
                     {feed.images.map((image, imageIndex) => (
-                      <img
-                        key={`${feed.id}-image-${imageIndex}`}
-                        src={image}
-                        alt=""
-                        data-testid="scene1-home-feed-image"
-                        className={`scene1-home-post-thumbnail ${
-                          ['scene1-home-post-thumbnail-a', 'scene1-home-post-thumbnail-b', 'scene1-home-post-thumbnail-c'][imageIndex] ?? ''
-                        }`.trim()}
-                        style={{ display: 'block', width: '100%', height: '210px', objectFit: 'cover' }}
-                      />
+                      <div key={`${feed.id}-image-${imageIndex}`} className="scene1-home-post-image-frame">
+                        <img src={image} alt="" data-testid="scene1-home-feed-image" className="scene1-home-post-image" />
+                      </div>
                     ))}
                   </div>
                 ) : null}
@@ -171,7 +160,8 @@ export function Scene1HomePage() {
                 </footer>
               </article>
             );
-          })}
+            })}
+          </section>
         </main>
 
         <button type="button" className="scene1-home-fab" aria-label="发布">

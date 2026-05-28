@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Scene1Page } from '../scenes/scene1/Scene1Page';
 import { Scene1HomePage } from '../scenes/scene1/Scene1HomePage';
+import { Scene1MessagePage } from '../scenes/scene1/Scene1MessagePage';
 import { Scene1MyPage } from '../scenes/scene1/Scene1MyPage';
 import { RecordLandingPage } from '../scenes/record-shell/RecordLandingPage';
 import { Scene2Page } from '../scenes/scene2/Scene2Page';
@@ -46,10 +47,21 @@ function SceneMyRouteShell() {
   );
 }
 
+function SceneMessageRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1MessagePage />
+      </div>
+    </div>
+  );
+}
+
 export function AppRouter() {
   return (
     <Routes>
       <Route path="/scene1-home" element={<SceneHomeRouteShell />} />
+      <Route path="/scene1-message" element={<SceneMessageRouteShell />} />
       <Route path="/scene1-my" element={<SceneMyRouteShell />} />
       <Route path="/scene1" element={<SceneRouteShell />} />
       <Route path="/scene1-perimenopause" element={<ScenePerimenopauseRouteShell />} />
