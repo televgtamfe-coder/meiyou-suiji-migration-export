@@ -36,24 +36,23 @@ describe('scene1 home first-screen fidelity', () => {
     expect(within(tabbar).getByRole('button', { name: '我的' })).toBeInTheDocument();
   });
 
-  it('uses the full phone-shell width so the bottom area aligns with the record page standard', () => {
+  it('uses the tighter 375px first-screen frame and 83px tabbar sizing from the Pixso capture', () => {
     const cssText = readFileSync(resolve(process.cwd(), 'src/styles/base.css'), 'utf8');
 
-    expect(cssText).toMatch(/\.scene1-home-page\s*\{[^}]*position:\s*relative;[^}]*width:\s*100%;/);
-    expect(cssText).toMatch(/\.scene1-home-topbar\s*\{[^}]*display:\s*grid;/);
+    expect(cssText).toContain('.scene1-home-page {\n  position: relative;\n  width: 375px;');
+    expect(cssText).toContain('.scene1-home-topbar {\n  display: grid;');
     expect(cssText).toContain('min-height: 44px;');
-    expect(cssText).toMatch(/\.scene1-home-body\s*\{[^}]*display:\s*flex;/);
+    expect(cssText).toContain('.scene1-home-body {\n  display: flex;');
     expect(cssText).toContain('padding: 4px 12px 24px;');
-    expect(cssText).not.toContain('.scene1-home-tabbar {');
+    expect(cssText).toContain('.scene1-home-tabbar {\n  height: 83px;');
   });
 
   it('keeps the top search and post actions visually flat and reuses the scene1 tab icon set', () => {
     const homeText = readFileSync(resolve(process.cwd(), 'src/scenes/scene1/Scene1HomePage.tsx'), 'utf8');
     const cssText = readFileSync(resolve(process.cwd(), 'src/styles/base.css'), 'utf8');
 
-    expect(cssText).toMatch(/\.scene1-home-search-btn,\s*\.scene1-home-post-btn\s*\{[\s\S]*?border:\s*none;[\s\S]*?background:\s*transparent;/);
-    expect(homeText).toContain('strokeWidth="1.8"');
-    expect(homeText).toContain('strokeWidth="1.45"');
-    expect(homeText).toContain('viewBox="0 0 20 20"');
+    expect(cssText).toContain('.scene1-home-search-btn,\n.scene1-home-post-btn {\n  border: none;\n  background: transparent;');
+    expect(homeText).toContain('strokeWidth="1.4"');
+    expect(homeText).toContain('viewBox="0 0 24 24"');
   });
 });
