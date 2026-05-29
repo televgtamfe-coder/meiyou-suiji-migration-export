@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -5,6 +7,25 @@ import { MemoryRouter } from 'react-router-dom';
 import { AppRouter } from '../../src/app/router';
 
 describe('scene1 assessment flow', () => {
+  it('uses the approved standardized typography scale across steps 1-6 and the result page', () => {
+    const cssText = readFileSync(resolve(process.cwd(), 'src/styles/base.css'), 'utf8');
+
+    expect(cssText).toContain('--scene1-assessment-title-size: 20px;');
+    expect(cssText).toContain('--scene1-assessment-section-title-size: 16px;');
+    expect(cssText).toContain('--scene1-assessment-question-size: 15px;');
+    expect(cssText).toContain('--scene1-assessment-body-size: 14px;');
+    expect(cssText).toContain('--scene1-assessment-helper-size: 12px;');
+    expect(cssText).toContain('--scene1-assessment-option-size: 14px;');
+    expect(cssText).toContain('--scene1-assessment-option-detail-size: 12px;');
+    expect(cssText).toContain('--scene1-assessment-number-size: 24px;');
+    expect(cssText).toContain('--scene1-assessment-badge-size: 11px;');
+    expect(cssText).toMatch(/\.scene1-assessment-title\s*\{[\s\S]*font-size:\s*var\(--scene1-assessment-title-size\);/);
+    expect(cssText).toMatch(/\.scene1-assessment-question\s*\{[\s\S]*font-size:\s*var\(--scene1-assessment-question-size\);/);
+    expect(cssText).toMatch(/\.scene1-assessment-body-copy\s*\{[\s\S]*font-size:\s*var\(--scene1-assessment-body-size\);/);
+    expect(cssText).toMatch(/\.scene1-assessment-choice-label\s*\{[\s\S]*font-size:\s*var\(--scene1-assessment-option-size\);/);
+    expect(cssText).toMatch(/\.scene1-assessment-result-overview-gauge-core strong\s*\{[\s\S]*font-size:\s*var\(--scene1-assessment-number-size\);/);
+  });
+
   it('requires answers before advancing and keeps answers when going back', async () => {
     const user = userEvent.setup();
 

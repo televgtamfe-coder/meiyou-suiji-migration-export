@@ -33,8 +33,7 @@ export function PerimenopauseAssessmentShell({
     return null;
   }
 
-  const canAdvance =
-    state.currentStep === 1 || state.completed || isAssessmentStepComplete(state);
+  const canAdvance = state.currentStep === 1 || state.completed || isAssessmentStepComplete(state);
   const nextLabel = state.currentStep === 6 ? '完成评估' : '下一步';
 
   return (
@@ -53,9 +52,7 @@ export function PerimenopauseAssessmentShell({
         </button>
       </div>
 
-      {!state.completed ? (
-        <AssessmentProgress currentStep={state.currentStep} totalSteps={6} />
-      ) : null}
+      {!state.completed ? <AssessmentProgress currentStep={state.currentStep} totalSteps={6} /> : null}
 
       <div className="scene1-assessment-body">
         <AssessmentStepRenderer state={state} onAnswer={onAnswer} />

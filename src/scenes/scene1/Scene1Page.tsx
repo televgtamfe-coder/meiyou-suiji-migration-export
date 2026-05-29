@@ -20,7 +20,7 @@ import { FloatingAnalysisNotice } from './components/FloatingAnalysisNotice';
 import { StatusBar } from './components/StatusBar';
 import { getKmiScoreSummary, pickCompletedKmiAnswers } from './kmiScoring';
 import { writeScene1KmiScore } from './kmiScoreStorage';
-import { kmiRules } from './kmiRules';
+import { KmiFieldKey, kmiRules } from './kmiRules';
 import { perimenopauseSymptomIconMap } from './perimenopauseSymptomIcons';
 import { calendarDays, calendarWeekdays, legendItems, quickRecordItems, scene1Modes } from './scene1Data';
 import { confirmPeriodStart, createScene1State, selectScene1Mode } from './scene1State';
@@ -31,9 +31,7 @@ type Scene1PageProps = {
 
 type QuickRecordItem = (typeof quickRecordItems)[number];
 
-const PERIMENOPAUSE_MODE_TITLE = '围绝经期模式';
-
-const CALENDAR_MONTH_LABEL = '4月';
+const CALENDAR_MONTH_LABEL = "4\u6708";
 
 function chunkKmiRows<T>(items: T[], columnCount = 4): Array<Array<T | null>> {
   const rows: Array<Array<T | null>> = [];
@@ -262,11 +260,11 @@ function RecordRow({
   expanded?: boolean;
 }) {
   return (
-      <div
-        data-testid={`scene1-record-row-${item.id}`}
-        className={`record-list-row-shell${expanded ? ' record-list-row-shell-expanded' : ''}`}
-      >
-        <div className={`record-list-row record-list-row-${item.id}${expanded ? ' record-list-row-expanded' : ''}`}>
+    <div
+      data-testid={`scene1-record-row-${item.id}`}
+      className={`record-list-row-shell${expanded ? ' record-list-row-shell-expanded' : ''}`}
+    >
+      <div className={`record-list-row record-list-row-${item.id}${expanded ? ' record-list-row-expanded' : ''}`}>
         <div
           data-testid={item.id === 'period' ? 'scene1-record-period-icon-shell' : undefined}
           className={`record-list-icon record-list-icon-${item.id}`}
@@ -307,13 +305,13 @@ function RecordRow({
                   <button
                     type="button"
                     className={periodConfirmed ? 'active' : ''}
-                    aria-label="是"
+                    aria-label={"\u662f"}
                     onClick={onConfirmPeriodStart}
                   >
-                    是
+                    {"\u662f"}
                   </button>
-                  <button type="button" className={!periodConfirmed ? 'active' : ''} aria-label="否">
-                    否
+                  <button type="button" className={!periodConfirmed ? 'active' : ''} aria-label={"\u5426"}>
+                    {"\u5426"}
                   </button>
                 </div>
               ) : null}
@@ -357,13 +355,17 @@ function PerimenopauseRecordList({
   onConfirmPeriodStart: () => void;
 }) {
   const kmiRows = chunkKmiRows(kmiRules);
+  const [symptomExpanded, setSymptomExpanded] = useState(true);
+  const [selectedSymptoms, setSelectedSymptoms] = useState<KmiFieldKey[]>([]);
+
+  function toggleSymptom(field: KmiFieldKey) {
+    setSelectedSymptoms((prev) =>
+      prev.includes(field) ? prev.filter((item) => item !== field) : [...prev, field]
+    );
+  }
 
   return (
     <div className="record-list record-list-perimenopause" data-testid="scene1-record-list">
-      <div className="scene1-perimenopause-intro">
-        <h2>{PERIMENOPAUSE_MODE_TITLE}</h2>
-      </div>
-
       {quickRecordItems.map((item) => {
         if (item.id === 'symptom') {
           return (
@@ -372,51 +374,85 @@ function PerimenopauseRecordList({
               item={item}
               periodConfirmed={periodConfirmed}
               onConfirmPeriodStart={onConfirmPeriodStart}
-              expanded
-              rightSlot={<span className="scene1-perimenopause-open-state">已展开</span>}
-            >
-              <div className="scene1-perimenopause-symptom-panel">
-                {kmiRows.map((row, rowIndex) => (
-                  <div
-                    key={`scene1-perimenopause-row-${rowIndex}`}
-                    data-testid="scene1-perimenopause-grid-row"
-                    className="scene1-perimenopause-grid-row"
+              expanded={symptomExpanded}
+              rightSlot={
+                symptomExpanded ? (
+                  <button
+                    type="button"
+                    className="scene1-perimenopause-toggle-btn scene1-perimenopause-open-state"
+                    aria-label={"\u5df2\u5c55\u5f00"}
+                    onClick={() => setSymptomExpanded(false)}
                   >
-                    {row.map((rule, columnIndex) => {
-                      if (!rule) {
-                        return (
-                          <div
-                            key={`scene1-perimenopause-placeholder-${rowIndex}-${columnIndex}`}
-                            data-testid="scene1-perimenopause-kmi-placeholder"
-                            className="scene1-perimenopause-kmi-item scene1-perimenopause-kmi-item-placeholder"
-                            aria-hidden="true"
-                          />
-                        );
-                      }
-
-                      return (
-                        <div
-                          key={rule.field}
-                          data-testid="scene1-perimenopause-kmi-item"
-                          className={`scene1-perimenopause-kmi-item scene1-perimenopause-kmi-item-${rule.field}`}
-                        >
-                          <div className="scene1-perimenopause-kmi-icon-slot">
-                            <img
-                              src={perimenopauseSymptomIconMap[rule.field]}
-                              alt=""
+                    {"\u5df2\u5c55\u5f00"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="scene1-perimenopause-toggle-btn"
+                    aria-label={"\u5c55\u5f00\u75c7\u72b6"}
+                    onClick={() => setSymptomExpanded(true)}
+                  >
+                    <span className="record-plus" aria-hidden="true">
+                      +
+                    </span>
+                  </button>
+                )
+              }
+            >
+              {symptomExpanded ? (
+                <div className="scene1-perimenopause-symptom-panel" data-testid="scene1-perimenopause-symptom-panel">
+                  {kmiRows.map((row, rowIndex) => (
+                    <div
+                      key={`scene1-perimenopause-row-${rowIndex}`}
+                      data-testid="scene1-perimenopause-grid-row"
+                      className="scene1-perimenopause-grid-row"
+                    >
+                      {row.map((rule, columnIndex) => {
+                        if (!rule) {
+                          return (
+                            <div
+                              key={`scene1-perimenopause-placeholder-${rowIndex}-${columnIndex}`}
+                              data-testid="scene1-perimenopause-kmi-placeholder"
+                              className="scene1-perimenopause-kmi-item scene1-perimenopause-kmi-item-placeholder"
                               aria-hidden="true"
-                              data-testid="scene1-perimenopause-kmi-icon"
-                              data-kmi-field={rule.field}
-                              className={`scene1-perimenopause-kmi-icon scene1-perimenopause-kmi-icon-${rule.field}`}
                             />
-                          </div>
-                          <span className="scene1-perimenopause-kmi-label">{rule.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
+                          );
+                        }
+
+                        const isSelected = selectedSymptoms.includes(rule.field);
+
+                        return (
+                          <button
+                            key={rule.field}
+                            type="button"
+                            data-testid={`scene1-perimenopause-kmi-toggle-${rule.field}`}
+                            aria-pressed={isSelected}
+                            className={`scene1-perimenopause-kmi-item scene1-perimenopause-kmi-item-${rule.field}${isSelected ? ' scene1-perimenopause-kmi-item-selected' : ''}`}
+                            onClick={() => toggleSymptom(rule.field)}
+                          >
+                            {isSelected ? (
+                              <span className="scene1-perimenopause-kmi-check" data-testid="scene1-perimenopause-kmi-check" aria-hidden="true">
+                                ✓
+                              </span>
+                            ) : null}
+                            <div className="scene1-perimenopause-kmi-icon-slot">
+                              <img
+                                src={perimenopauseSymptomIconMap[rule.field]}
+                                alt=""
+                                aria-hidden="true"
+                                data-testid="scene1-perimenopause-kmi-icon"
+                                data-kmi-field={rule.field}
+                                className={`scene1-perimenopause-kmi-icon scene1-perimenopause-kmi-icon-${rule.field}`}
+                              />
+                            </div>
+                            <span className="scene1-perimenopause-kmi-label">{rule.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </RecordRow>
           );
         }
@@ -456,6 +492,20 @@ export function Scene1Page({ routeVariant = 'default' }: Scene1PageProps) {
     setAssessmentState(nextState);
   }
 
+  function handleModeSelect(mode: string) {
+    if (mode === '备孕') {
+      navigate('/scene1-prep');
+      return;
+    }
+
+    if (mode === '育儿') {
+      navigate('/scene1-parenting');
+      return;
+    }
+
+    setState((prev) => selectScene1Mode(prev, mode));
+  }
+
   return (
     <div data-testid={isPerimenopauseRoute ? 'scene1-perimenopause-route-shell' : 'scene-route-shell'} className="scene1-calendar-page">
       <StatusBar />
@@ -467,28 +517,28 @@ export function Scene1Page({ routeVariant = 'default' }: Scene1PageProps) {
               type="button"
               data-testid="scene1-calendar-month-button"
               className="prototype-month-button"
-              aria-label={`${CALENDAR_MONTH_LABEL} 月份`}
+              aria-label={CALENDAR_MONTH_LABEL}
             >
               <span className="prototype-month-arrow" aria-hidden="true">
                 &#8249;
               </span>
               <span className="calendar-month prototype-month">{CALENDAR_MONTH_LABEL}</span>
             </button>
-            <div className="mode-tabs prototype-mode-tabs" role="tablist" aria-label="模式切换">
+            <div className="mode-tabs prototype-mode-tabs" role="tablist" aria-label={"\u6a21\u5f0f\u5207\u6362"}>
               {scene1Modes.map((mode) => (
                 <button
                   key={mode}
                   type="button"
                   className={state.selectedMode === mode ? 'mode-tab prototype-mode-tab active' : 'mode-tab prototype-mode-tab'}
-                  onClick={() => setState((prev) => selectScene1Mode(prev, mode))}
+                  onClick={() => handleModeSelect(mode)}
                 >
                   {mode}
                 </button>
               ))}
             </div>
-            <button type="button" className="prototype-analysis-entry" aria-label="分析">
-              <span className="analysis-entry-icon">⌁</span>
-              <span>分析</span>
+            <button type="button" className="prototype-analysis-entry" aria-label={"\u5206\u6790"}>
+              <span className="analysis-entry-icon">*</span>
+              <span>{"\u5206\u6790"}</span>
             </button>
           </div>
 
@@ -516,7 +566,7 @@ export function Scene1Page({ routeVariant = 'default' }: Scene1PageProps) {
                       <div key={`${rowIndex}-${cell.n}`} className={classes}>
                         <div className="prototype-day-num">
                           {cell.n}
-                          {cell.today ? <span className="today-badge">今天</span> : null}
+                          {cell.today ? <span className="today-badge">{"\u4eca\u5929"}</span> : null}
                         </div>
                       </div>
                     );
@@ -532,16 +582,17 @@ export function Scene1Page({ routeVariant = 'default' }: Scene1PageProps) {
                   {item.label}
                 </span>
               ))}
-              <span className="legend-arrow">›</span>
+              <span className="legend-arrow">{"\u203a"}</span>
             </div>
 
             <button
               type="button"
               className={`scene1-mode-switch${isPerimenopauseRoute ? ' scene1-mode-switch-exit' : ''}`}
-              aria-label={isPerimenopauseRoute ? '退出围绝经期' : '进入围绝经期模式'}
+              data-testid={isPerimenopauseRoute ? 'scene1-perimenopause-mode-exit-button' : 'scene1-perimenopause-mode-entry-button'}
+              aria-label={isPerimenopauseRoute ? "\u9000\u51fa\u56f4\u7edd\u7ecf\u671f" : "\u8fdb\u5165\u56f4\u7edd\u7ecf\u671f\u6a21\u5f0f"}
               onClick={() => navigate(isPerimenopauseRoute ? '/scene1' : '/scene1-perimenopause')}
             >
-              {isPerimenopauseRoute ? '退出围绝经期' : '进入围绝经期模式'}
+              {isPerimenopauseRoute ? "\u9000\u51fa\u56f4\u7edd\u7ecf\u671f" : "\u8fdb\u5165\u56f4\u7edd\u7ecf\u671f\u6a21\u5f0f"}
             </button>
           </div>
 
@@ -566,7 +617,7 @@ export function Scene1Page({ routeVariant = 'default' }: Scene1PageProps) {
 
         <FloatingAnalysisNotice
           show={state.showAnalysisNotice}
-          text="结合近期记录，已为你生成周期状态分析"
+          text={"\u7ed3\u5408\u8fd1\u671f\u8bb0\u5f55\uff0c\u5df2\u4e3a\u4f60\u751f\u6210\u5468\u671f\u72b6\u6001\u5206\u6790"}
           onOpen={() => navigate('/record')}
         />
 
