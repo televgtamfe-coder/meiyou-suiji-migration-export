@@ -5,6 +5,7 @@ import { Scene1MessagePage } from '../scenes/scene1/Scene1MessagePage';
 import { Scene1MyPage } from '../scenes/scene1/Scene1MyPage';
 import { Scene1PrepPage } from '../scenes/scene1/Scene1PrepPage';
 import { Scene1ParentingPage } from '../scenes/scene1/Scene1ParentingPage';
+import { Scene1PregnancyPage } from '../scenes/scene1/Scene1PregnancyPage';
 import { RecordLandingPage } from '../scenes/record-shell/RecordLandingPage';
 import { Scene2Page } from '../scenes/scene2/Scene2Page';
 import { Scene3Page } from '../scenes/scene3/Scene3Page';
@@ -69,6 +70,16 @@ function SceneParentingRouteShell() {
   );
 }
 
+function ScenePregnancyRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1PregnancyPage />
+      </div>
+    </div>
+  );
+}
+
 function ScenePrepRouteShell() {
   return (
     <div className="app-root">
@@ -83,6 +94,7 @@ export function AppRouter() {
   return (
     <Routes>
       <Route path="/scene1-prep" element={<ScenePrepRouteShell />} />
+      <Route path="/scene1-pregnancy" element={<ScenePregnancyRouteShell />} />
       <Route path="/scene1-parenting" element={<SceneParentingRouteShell />} />
       <Route path="/scene1-home" element={<SceneHomeRouteShell />} />
       <Route path="/scene1-message" element={<SceneMessageRouteShell />} />

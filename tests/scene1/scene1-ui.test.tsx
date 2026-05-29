@@ -115,6 +115,23 @@ describe('scene1 ui', () => {
     expect(screen.getByTestId('scene1-prep-knowledge-pill')).toBeInTheDocument();
   });
 
+  it('renders the pregnancy page route shell', () => {
+    render(
+      <MemoryRouter initialEntries={['/scene1-pregnancy']}>
+        <AppRouter />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId('scene1-pregnancy-shell')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-pregnancy-hero')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-pregnancy-main-card')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-pregnancy-quick-grid')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-pregnancy-changes-card')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-pregnancy-services-grid')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-pregnancy-article-card')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-pregnancy-checkin-card')).toBeInTheDocument();
+  });
+
   it('navigates to the parenting page from the scene1 mode switch', async () => {
     const user = userEvent.setup();
 
@@ -128,6 +145,21 @@ describe('scene1 ui', () => {
     await user.click(screen.getByRole('button', { name: '\u80b2\u513f' }));
 
     expect(screen.getByTestId('scene1-parenting-shell')).toBeInTheDocument();
+  });
+
+  it('navigates to the pregnancy page from the scene1 mode switch', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/scene1']}>
+        <AppRouter />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: '稍后再说' }));
+    await user.click(screen.getByRole('button', { name: '怀孕' }));
+
+    expect(screen.getByTestId('scene1-pregnancy-shell')).toBeInTheDocument();
   });
 
   it('navigates to the prep page from the scene1 mode switch', async () => {

@@ -498,6 +498,11 @@ export function Scene1Page({ routeVariant = 'default' }: Scene1PageProps) {
       return;
     }
 
+    if (mode === '怀孕') {
+      navigate('/scene1-pregnancy');
+      return;
+    }
+
     if (mode === '育儿') {
       navigate('/scene1-parenting');
       return;
