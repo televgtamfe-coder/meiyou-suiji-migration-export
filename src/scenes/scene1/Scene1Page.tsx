@@ -20,8 +20,11 @@ import { FloatingAnalysisNotice } from './components/FloatingAnalysisNotice';
 import { StatusBar } from './components/StatusBar';
 import { getKmiScoreSummary, pickCompletedKmiAnswers } from './kmiScoring';
 import { writeScene1KmiScore } from './kmiScoreStorage';
-import { KmiFieldKey, kmiRules } from './kmiRules';
 import { perimenopauseSymptomIconMap } from './perimenopauseSymptomIcons';
+import {
+  PerimenopauseSymptomItemId,
+  perimenopauseSymptomSections,
+} from './perimenopauseSymptomSections';
 import { calendarDays, calendarWeekdays, legendItems, quickRecordItems, scene1Modes } from './scene1Data';
 import { confirmPeriodStart, createScene1State, selectScene1Mode } from './scene1State';
 
@@ -32,22 +35,6 @@ type Scene1PageProps = {
 type QuickRecordItem = (typeof quickRecordItems)[number];
 
 const CALENDAR_MONTH_LABEL = "4\u6708";
-
-function chunkKmiRows<T>(items: T[], columnCount = 4): Array<Array<T | null>> {
-  const rows: Array<Array<T | null>> = [];
-
-  for (let cursor = 0; cursor < items.length; cursor += columnCount) {
-    const row = items.slice(cursor, cursor + columnCount) as Array<T | null>;
-
-    while (row.length < columnCount) {
-      row.push(null);
-    }
-
-    rows.push(row);
-  }
-
-  return rows;
-}
 
 function MoodSmileIcon() {
   return (
@@ -354,13 +341,12 @@ function PerimenopauseRecordList({
   periodConfirmed: boolean;
   onConfirmPeriodStart: () => void;
 }) {
-  const kmiRows = chunkKmiRows(kmiRules);
   const [symptomExpanded, setSymptomExpanded] = useState(true);
-  const [selectedSymptoms, setSelectedSymptoms] = useState<KmiFieldKey[]>([]);
+  const [selectedSymptoms, setSelectedSymptoms] = useState<PerimenopauseSymptomItemId[]>([]);
 
-  function toggleSymptom(field: KmiFieldKey) {
+  function toggleSymptom(id: PerimenopauseSymptomItemId) {
     setSelectedSymptoms((prev) =>
-      prev.includes(field) ? prev.filter((item) => item !== field) : [...prev, field]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   }
 
@@ -401,55 +387,59 @@ function PerimenopauseRecordList({
             >
               {symptomExpanded ? (
                 <div className="scene1-perimenopause-symptom-panel" data-testid="scene1-perimenopause-symptom-panel">
-                  {kmiRows.map((row, rowIndex) => (
-                    <div
-                      key={`scene1-perimenopause-row-${rowIndex}`}
-                      data-testid="scene1-perimenopause-grid-row"
-                      className="scene1-perimenopause-grid-row"
+                  {perimenopauseSymptomSections.map((section) => (
+                    <section
+                      key={section.title}
+                      className="scene1-perimenopause-symptom-section"
+                      data-testid="scene1-perimenopause-symptom-section"
                     >
-                      {row.map((rule, columnIndex) => {
-                        if (!rule) {
+                      <h3 className="scene1-perimenopause-symptom-section-title">{section.title}</h3>
+                      <div
+                        className="scene1-perimenopause-symptom-grid"
+                        data-testid="scene1-perimenopause-symptom-grid"
+                      >
+                        {section.items.map((item) => {
+                          const isSelected = selectedSymptoms.includes(item.id);
+
                           return (
                             <div
-                              key={`scene1-perimenopause-placeholder-${rowIndex}-${columnIndex}`}
-                              data-testid="scene1-perimenopause-kmi-placeholder"
-                              className="scene1-perimenopause-kmi-item scene1-perimenopause-kmi-item-placeholder"
-                              aria-hidden="true"
-                            />
-                          );
-                        }
-
-                        const isSelected = selectedSymptoms.includes(rule.field);
-
-                        return (
-                          <button
-                            key={rule.field}
-                            type="button"
-                            data-testid={`scene1-perimenopause-kmi-toggle-${rule.field}`}
-                            aria-pressed={isSelected}
-                            className={`scene1-perimenopause-kmi-item scene1-perimenopause-kmi-item-${rule.field}${isSelected ? ' scene1-perimenopause-kmi-item-selected' : ''}`}
-                            onClick={() => toggleSymptom(rule.field)}
-                          >
-                            {isSelected ? (
-                              <span className="scene1-perimenopause-kmi-check" data-testid="scene1-perimenopause-kmi-check" aria-hidden="true">
-                                ✓
-                              </span>
-                            ) : null}
-                            <div className="scene1-perimenopause-kmi-icon-slot">
-                              <img
-                                src={perimenopauseSymptomIconMap[rule.field]}
-                                alt=""
-                                aria-hidden="true"
-                                data-testid="scene1-perimenopause-kmi-icon"
-                                data-kmi-field={rule.field}
-                                className={`scene1-perimenopause-kmi-icon scene1-perimenopause-kmi-icon-${rule.field}`}
-                              />
+                              key={item.id}
+                              className="scene1-perimenopause-kmi-item-shell"
+                              data-testid="scene1-perimenopause-kmi-item"
+                            >
+                              <button
+                                type="button"
+                                data-testid={`scene1-perimenopause-kmi-toggle-${item.id}`}
+                                aria-pressed={isSelected}
+                                className={`scene1-perimenopause-kmi-item scene1-perimenopause-kmi-item-${item.iconField}${isSelected ? ' scene1-perimenopause-kmi-item-selected' : ''}`}
+                                onClick={() => toggleSymptom(item.id)}
+                              >
+                                {isSelected ? (
+                                  <span
+                                    className="scene1-perimenopause-kmi-check"
+                                    data-testid="scene1-perimenopause-kmi-check"
+                                    aria-hidden="true"
+                                  >
+                                    ✓
+                                  </span>
+                                ) : null}
+                                <div className="scene1-perimenopause-kmi-icon-slot">
+                                  <img
+                                    src={perimenopauseSymptomIconMap[item.iconField]}
+                                    alt=""
+                                    aria-hidden="true"
+                                    data-testid="scene1-perimenopause-kmi-icon"
+                                    data-kmi-field={item.iconField}
+                                    className={`scene1-perimenopause-kmi-icon scene1-perimenopause-kmi-icon-${item.iconField}`}
+                                  />
+                                </div>
+                                <span className="scene1-perimenopause-kmi-label">{item.label}</span>
+                              </button>
                             </div>
-                            <span className="scene1-perimenopause-kmi-label">{rule.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
+                    </section>
                   ))}
                 </div>
               ) : null}
@@ -542,8 +532,7 @@ export function Scene1Page({ routeVariant = 'default' }: Scene1PageProps) {
               ))}
             </div>
             <button type="button" className="prototype-analysis-entry" aria-label={"\u5206\u6790"}>
-              <span className="analysis-entry-icon">*</span>
-              <span>{"\u5206\u6790"}</span>
+              {"\u5206\u6790"}
             </button>
           </div>
 

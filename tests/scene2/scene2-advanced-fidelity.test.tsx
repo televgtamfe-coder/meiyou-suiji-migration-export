@@ -17,7 +17,7 @@ describe('scene2 advanced fidelity', () => {
     expect(screen.getByTestId('scene2-mic-core')).toBeInTheDocument();
 
     fireEvent.mouseDown(micButton);
-    expect(screen.getByText('松开发送')).toBeInTheDocument();
+    expect(screen.getByText('松开发表')).toBeInTheDocument();
     fireEvent.mouseUp(micButton);
     expect(screen.getByText(/按住说话\s+或\s+点击长录/)).toBeInTheDocument();
   });

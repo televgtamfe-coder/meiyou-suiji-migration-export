@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Scene1BottomTabBar } from '../scene1/components/Scene1BottomTabBar';
 
 const scene2ChartData = [0.35, 0.55, 0.4, 0.7, 0.5, 0.8, 0.65] as const;
 const scene2ChartLabels = ['一', '二', '三', '四', '五', '六', '日'] as const;
@@ -33,7 +33,6 @@ function getDemoStage(step: number) {
 }
 
 export function Scene2Page() {
-  const navigate = useNavigate();
   const [pressed, setPressed] = useState(false);
   const [demoStep, setDemoStep] = useState(0);
 
@@ -77,18 +76,6 @@ export function Scene2Page() {
           <div className="scene2-blob scene2-blob-bl" aria-hidden="true" />
 
           <div className="scene2-head">
-            <button
-              type="button"
-              className="record-page-back scene2-back"
-              aria-label={scene2Copy.backAriaLabel}
-              data-testid="scene2-back-button"
-              onClick={() => navigate(-1)}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M15 6L9 12L15 18" />
-              </svg>
-              <span>{scene2Copy.backLabel}</span>
-            </button>
             <div className="scene2-title">{scene2Copy.pageTitle}</div>
           </div>
 
@@ -181,6 +168,8 @@ export function Scene2Page() {
             <p className="scene2-voice-hint">{pressed ? scene2Copy.releaseHint : scene2Copy.pressHint}</p>
           </div>
         </div>
+
+        <Scene1BottomTabBar activeTab="feed" />
       </div>
     </div>
   );

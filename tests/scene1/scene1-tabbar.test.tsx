@@ -46,6 +46,23 @@ describe('scene1 tabbar fidelity', () => {
 
     expect(screen.getByTestId('scene2-shell')).toBeInTheDocument();
     expect(screen.getByTestId('scene2-hero')).toBeInTheDocument();
+    const tabbar = screen.getByTestId('scene1-tabbar');
+    expect(within(tabbar).getByRole('button', { name: '点滴' })).toHaveClass('active');
+  });
+
+  it('renders the shared bottom tabbar on /scene2', () => {
+    render(
+      <MemoryRouter initialEntries={['/scene2']}>
+        <AppRouter />
+      </MemoryRouter>
+    );
+
+    const tabbar = screen.getByTestId('scene1-tabbar');
+
+    expect(tabbar).toBeInTheDocument();
+    expect(within(tabbar).getByRole('button', { name: '点滴' })).toHaveClass('active');
+    expect(within(tabbar).getByRole('button', { name: '记录' })).toBeInTheDocument();
+    expect(within(tabbar).getByRole('button', { name: '消息' })).toBeInTheDocument();
   });
 
   it('routes the 首页 tab to the period home page', async () => {

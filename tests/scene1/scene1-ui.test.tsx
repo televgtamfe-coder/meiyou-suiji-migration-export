@@ -34,6 +34,22 @@ describe('scene1 ui', () => {
     expect(screen.getByTestId('scene1-perimenopause-mode-entry-button')).toBeInTheDocument();
   });
 
+  it('renders a text-only analysis entry in the record top bar', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/scene1']}>
+        <AppRouter />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: '\u7a0d\u540e\u518d\u8bf4' }));
+
+    const analysisEntry = screen.getByRole('button', { name: '\u5206\u6790' });
+
+    expect(analysisEntry).toHaveTextContent(/^\u5206\u6790$/);
+  });
+
   it('renders the exit button on the perimenopause route', () => {
     render(
       <MemoryRouter initialEntries={['/scene1-perimenopause']}>
@@ -54,6 +70,9 @@ describe('scene1 ui', () => {
     );
 
     expect(screen.getByTestId('scene1-perimenopause-symptom-panel')).toBeInTheDocument();
+    expect(screen.getByText('\u7761\u7720\u95ee\u9898')).toBeInTheDocument();
+    expect(screen.getByText('\u8111\u96fe')).toBeInTheDocument();
+    expect(screen.getByText('\u80c3\u53e3\u53d8\u5316')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '\u5df2\u5c55\u5f00' }));
     expect(screen.queryByTestId('scene1-perimenopause-symptom-panel')).not.toBeInTheDocument();

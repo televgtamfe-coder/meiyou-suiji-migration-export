@@ -4,7 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { AppRouter } from '../../src/app/router';
 import { perimenopauseSymptomIconMap } from '../../src/scenes/scene1/perimenopauseSymptomIcons';
-import { kmiRules } from '../../src/scenes/scene1/kmiRules';
+import {
+  perimenopauseSymptomItemCount,
+  perimenopauseSymptomSections,
+} from '../../src/scenes/scene1/perimenopauseSymptomSections';
 
 describe('scene1 routing', () => {
   it('navigates from the prototype analysis notice to the record detail page', async () => {
@@ -35,16 +38,23 @@ describe('scene1 routing', () => {
 
     expect(screen.getByTestId('scene1-perimenopause-route-shell')).toBeInTheDocument();
     expect(screen.queryByRole('dialog', { name: '开启您的围绝经期健康评估' })).not.toBeInTheDocument();
-    expect(screen.getByText('围绝经期模式')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-perimenopause-mode-exit-button')).toBeInTheDocument();
     expect(screen.queryByText('最近的月经周期有什么变化')).not.toBeInTheDocument();
     expect(screen.queryByText('（记录数据读取，无记录数据填写）')).not.toBeInTheDocument();
     expect(screen.getByText('症状')).toBeInTheDocument();
-    expect(screen.getAllByTestId('scene1-perimenopause-kmi-item')).toHaveLength(kmiRules.length);
-    expect(screen.getAllByTestId('scene1-perimenopause-kmi-icon')).toHaveLength(kmiRules.length);
+    expect(screen.getAllByTestId('scene1-perimenopause-symptom-section')).toHaveLength(
+      perimenopauseSymptomSections.length,
+    );
+    expect(screen.getAllByTestId('scene1-perimenopause-kmi-item')).toHaveLength(perimenopauseSymptomItemCount);
+    expect(screen.getAllByTestId('scene1-perimenopause-kmi-icon')).toHaveLength(perimenopauseSymptomItemCount);
 
-    for (const rule of kmiRules) {
-      expect(screen.getByText(rule.label)).toBeInTheDocument();
+    for (const section of perimenopauseSymptomSections) {
+      expect(screen.getByText(section.title)).toBeInTheDocument();
     }
+
+    expect(screen.getByText('脑雾')).toBeInTheDocument();
+    expect(screen.getByText('阴道灼热')).toBeInTheDocument();
+    expect(screen.getByText('胃口变化')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '退出围绝经期' }));
 
@@ -101,15 +111,22 @@ describe('scene1 routing', () => {
     );
   });
 
-  it('lays out perimenopause symptoms in four columns with placeholder slots', () => {
+  it('lays out perimenopause symptoms in grouped sections', () => {
     render(
       <MemoryRouter initialEntries={['/scene1-perimenopause']}>
         <AppRouter />
       </MemoryRouter>
     );
 
-    expect(screen.getAllByTestId('scene1-perimenopause-grid-row')).toHaveLength(4);
-    expect(screen.getAllByTestId('scene1-perimenopause-kmi-item')).toHaveLength(kmiRules.length);
-    expect(screen.getAllByTestId('scene1-perimenopause-kmi-placeholder')).toHaveLength(3);
+    expect(screen.getAllByTestId('scene1-perimenopause-symptom-grid')).toHaveLength(
+      perimenopauseSymptomSections.length,
+    );
+    expect(screen.getAllByTestId('scene1-perimenopause-symptom-section')).toHaveLength(
+      perimenopauseSymptomSections.length,
+    );
+    expect(screen.getAllByTestId('scene1-perimenopause-kmi-item')).toHaveLength(
+      perimenopauseSymptomItemCount,
+    );
+    expect(screen.queryByTestId('scene1-perimenopause-kmi-placeholder')).not.toBeInTheDocument();
   });
 });
