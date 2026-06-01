@@ -13,7 +13,7 @@ import { AssessmentStepRenderer } from './AssessmentStepRenderer';
 type PerimenopauseAssessmentShellProps = {
   state: Scene1AssessmentState;
   onAnswer: (field: AssessmentFieldKey, value: string) => void;
-  onClose: () => void;
+  onExitToScene1: () => void;
   onReturnToScene1: () => void;
   onEnterPerimenopauseMode: () => void;
   onNext: (nextState: Scene1AssessmentState) => void;
@@ -23,7 +23,7 @@ type PerimenopauseAssessmentShellProps = {
 export function PerimenopauseAssessmentShell({
   state,
   onAnswer,
-  onClose,
+  onExitToScene1,
   onReturnToScene1,
   onEnterPerimenopauseMode,
   onNext,
@@ -35,23 +35,22 @@ export function PerimenopauseAssessmentShell({
 
   const canAdvance = state.currentStep === 1 || state.completed || isAssessmentStepComplete(state);
   const nextLabel = state.currentStep === 6 ? '完成评估' : '下一步';
+  const handlePrevious = () => {
+    if (state.completed) {
+      onPrevious(reopenAssessmentFromCompletion(state));
+      return;
+    }
+
+    if (state.currentStep === 1) {
+      onExitToScene1();
+      return;
+    }
+
+    onPrevious(goToPreviousAssessmentStep(state));
+  };
 
   return (
     <div className="scene1-assessment-shell" data-testid="scene1-assessment-shell">
-      <div className="scene1-assessment-header">
-        <button
-          type="button"
-          className="scene1-assessment-header-btn"
-          aria-label="返回"
-          onClick={onClose}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M15 6L9 12L15 18" />
-          </svg>
-          <span className="scene1-sr-only">返回</span>
-        </button>
-      </div>
-
       {!state.completed ? <AssessmentProgress currentStep={state.currentStep} totalSteps={6} /> : null}
 
       <div className="scene1-assessment-body">
@@ -62,10 +61,7 @@ export function PerimenopauseAssessmentShell({
         <button
           type="button"
           className="scene1-assessment-secondary-btn"
-          disabled={state.currentStep === 1 && !state.completed}
-          onClick={() =>
-            onPrevious(state.completed ? reopenAssessmentFromCompletion(state) : goToPreviousAssessmentStep(state))
-          }
+          onClick={handlePrevious}
         >
           上一步
         </button>

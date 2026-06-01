@@ -24,7 +24,7 @@ describe('scene1 assessment state', () => {
 
   it('opens the wizard from the entry modal and resets progress when closed', () => {
     const opened = openAssessmentFlow(createAssessmentState());
-    const answered = answerAssessmentField(opened, 'birthDate', '1984-05-01');
+    const answered = answerAssessmentField(opened, 'age', '42');
     const advanced = goToNextAssessmentStep(answered);
     const closed = closeAssessmentFlow(advanced);
 
@@ -43,7 +43,7 @@ describe('scene1 assessment state', () => {
     expect(state.currentStep).toBe(2);
     expect(isAssessmentStepComplete(state)).toBe(false);
 
-    state = answerAssessmentField(state, 'birthDate', '1984-05-01');
+    state = answerAssessmentField(state, 'age', '42');
     state = answerAssessmentField(state, 'heightCm', '165');
     state = answerAssessmentField(state, 'weightKg', '58');
 
@@ -60,7 +60,7 @@ describe('scene1 assessment state', () => {
     const steppedBack = goToPreviousAssessmentStep(answered);
 
     expect(steppedBack.currentStep).toBe(2);
-    expect(steppedBack.answers.birthDate).toBe('1984-05-01');
+    expect(steppedBack.answers.age).toBe('42');
     expect(answered.answers.periodPresence).toBe('yes');
     expect(answered.answers.lastPeriodQuickOption).toBe('current-period');
   });

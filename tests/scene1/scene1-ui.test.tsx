@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { AppRouter } from '../../src/app/router';
@@ -97,6 +97,82 @@ describe('scene1 ui', () => {
     await user.click(hotFlashesToggle);
 
     expect(within(hotFlashesToggle).getByTestId('scene1-perimenopause-kmi-check')).toBeInTheDocument();
+  });
+
+  it('renders different icon assets for symptoms that share one KMI field', () => {
+    render(
+      <MemoryRouter initialEntries={['/scene1-perimenopause']}>
+        <AppRouter />
+      </MemoryRouter>,
+    );
+
+    const hotFlashesToggle = screen.getByTestId('scene1-perimenopause-kmi-toggle-kmiHotFlashes');
+    const sweatingToggle = screen.getByTestId('scene1-perimenopause-kmi-toggle-symptom-sweating');
+    const hotFlashesIcon = hotFlashesToggle.querySelector('img');
+    const sweatingIcon = sweatingToggle.querySelector('img');
+
+    expect(hotFlashesIcon).not.toBeNull();
+    expect(sweatingIcon).not.toBeNull();
+    expect(hotFlashesIcon?.getAttribute('src')).not.toBe(sweatingIcon?.getAttribute('src'));
+  });
+
+  it('renders the symptom action bar at the bottom of the perimenopause panel', () => {
+    render(
+      <MemoryRouter initialEntries={['/scene1-perimenopause']}>
+        <AppRouter />
+      </MemoryRouter>,
+    );
+
+    const panel = screen.getByTestId('scene1-perimenopause-symptom-panel');
+    const actionBar = within(panel).getByTestId('scene1-perimenopause-symptom-action-bar');
+
+    expect(actionBar).toBeInTheDocument();
+    expect(within(actionBar).getByRole('button', { name: '取消' })).toBeInTheDocument();
+    expect(within(actionBar).queryByText('症状')).not.toBeInTheDocument();
+    expect(within(actionBar).getByRole('button', { name: '确定' })).toBeInTheDocument();
+  });
+
+  it('opens a compact tip modal after confirming symptom selection', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/scene1-perimenopause']}>
+        <AppRouter />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: '确定' }));
+
+    expect(screen.getByTestId('scene1-perimenopause-tip-modal')).toBeInTheDocument();
+    expect(screen.getByText('坚持记录14天 掌握你的身体变化')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '关闭提示' })).toBeInTheDocument();
+  });
+
+  it('auto closes the tip modal after 2 seconds', async () => {
+    vi.useFakeTimers();
+
+    try {
+      render(
+        <MemoryRouter initialEntries={['/scene1-perimenopause']}>
+          <AppRouter />
+        </MemoryRouter>,
+      );
+
+      act(() => {
+        screen.getByRole('button', { name: '\u786e\u5b9a' }).click();
+      });
+
+      expect(screen.getByTestId('scene1-perimenopause-tip-modal')).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(2000);
+      });
+
+      expect(screen.queryByTestId('scene1-perimenopause-tip-modal')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('scene1-perimenopause-symptom-panel')).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('renders the parenting page route shell', () => {

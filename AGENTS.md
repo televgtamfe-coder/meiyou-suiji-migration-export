@@ -28,6 +28,7 @@
    `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-message`
    `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-my`
    `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-perimenopause`
+   后续 H5 验证默认只保留 GitHub Pages 域名进行审查，不再使用 Vercel 域名作为 H5 验证地址。
 
 4. Vercel 以前接通过，但用户后续明确说过“只保留 githubio”。
    默认情况下：
@@ -149,7 +150,9 @@
 
 4. 绝对不要改公开地址名字
 
-5. 修改完成后，直接按已有方式更新，不要再走第一次部署时的探索流程
+5. H5 验证与验收默认只使用 GitHub Pages 域名
+
+6. 修改完成后，直接按已有方式更新，不要再走第一次部署时的探索流程
 
 ### 八、默认输出格式
 

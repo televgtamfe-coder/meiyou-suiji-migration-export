@@ -38,7 +38,7 @@ export function getBoneHealthDecision(
   answers: AssessmentAnswers,
   kmiDetails: KmiScoreDetail[]
 ): ResultDecisionDetail {
-  const age = getAgeFromBirthDate(answers.birthDate);
+  const age = getAssessmentAge(answers.age);
   const weightKg = toNumber(answers.weightKg);
   const bmi = calculateBmi(answers.heightCm, answers.weightKg);
   const osta = age !== null && weightKg !== null ? Number(((weightKg - age) * 0.2).toFixed(1)) : null;
@@ -213,26 +213,18 @@ export function getExerciseDecision(
   };
 }
 
-function getAgeFromBirthDate(birthDate: string): number | null {
-  if (!birthDate) {
+function getAssessmentAge(ageValue: string): number | null {
+  if (!ageValue) {
     return null;
   }
 
-  const parsed = new Date(birthDate);
+  const parsed = Number(ageValue);
 
-  if (Number.isNaN(parsed.getTime())) {
+  if (!Number.isFinite(parsed) || parsed < 0) {
     return null;
   }
 
-  const now = new Date();
-  let age = now.getFullYear() - parsed.getFullYear();
-  const monthOffset = now.getMonth() - parsed.getMonth();
-
-  if (monthOffset < 0 || (monthOffset === 0 && now.getDate() < parsed.getDate())) {
-    age -= 1;
-  }
-
-  return Math.max(0, age);
+  return Math.round(parsed);
 }
 
 function calculateBmi(heightCmValue: string, weightKgValue: string): number | null {

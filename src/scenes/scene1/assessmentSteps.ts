@@ -3,7 +3,7 @@ import { kmiRules } from './kmiRules';
 export type AssessmentStepId = 1 | 2 | 3 | 4 | 5 | 6;
 
 export type AssessmentFieldKey =
-  | 'birthDate'
+  | 'age'
   | 'heightCm'
   | 'weightKg'
   | 'periodPresence'
@@ -58,7 +58,7 @@ export const assessmentSteps: AssessmentStepDefinition[] = [
     id: 2,
     title: '先了解一下你的基本信息',
     subtitle: '这些信息会帮助我们更准确地理解你的身体状态。',
-    requiredFields: ['birthDate', 'heightCm', 'weightKg'],
+    requiredFields: ['age', 'heightCm', 'weightKg'],
   },
   {
     id: 3,

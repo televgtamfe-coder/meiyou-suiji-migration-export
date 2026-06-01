@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AssessmentFieldKey, AssessmentOption, getAssessmentStep } from '../assessmentSteps';
 import { Scene1AssessmentState } from '../assessmentState';
 import { getKmiScoreSummary, pickCompletedKmiAnswers } from '../kmiScoring';
@@ -64,6 +64,43 @@ const kmiSetTwoPrompts = kmiPrompts.slice(6);
 const currentYear = new Date().getFullYear();
 const dateYearOptions = Array.from({ length: currentYear - 1919 }, (_, index) => String(currentYear - index));
 const dateMonthOptions = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, '0'));
+const agePickerOptions = createIntegerPickerOptions(18, 80, '岁');
+const heightPickerOptions = createIntegerPickerOptions(140, 200, 'cm');
+const weightPickerOptions = createIntegerPickerOptions(30, 120, 'kg');
+const profilePickerConfigMap: Record<
+  ProfilePickerFieldKey,
+  Omit<ProfilePickerConfig, 'field'>
+> = {
+  age: {
+    label: '年龄',
+    placeholder: '点击选择年龄',
+    defaultValue: '45',
+    options: agePickerOptions,
+  },
+  heightCm: {
+    label: '身高',
+    placeholder: '点击选择身高',
+    defaultValue: '160',
+    options: heightPickerOptions,
+  },
+  weightKg: {
+    label: '体重',
+    placeholder: '点击选择体重',
+    defaultValue: '55',
+    options: weightPickerOptions,
+  },
+};
+
+function createIntegerPickerOptions(start: number, end: number, suffix: string): ProfilePickerOption[] {
+  return Array.from({ length: end - start + 1 }, (_, index) => {
+    const value = String(start + index);
+
+    return {
+      value,
+      label: `${value}${suffix}`,
+    };
+  });
+}
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month, 0).getDate();
@@ -103,6 +140,41 @@ type StructuredDateFieldProps = Omit<TextFieldProps, 'type' | 'placeholder' | 's
   onValueChange?: (value: string) => void;
 };
 
+type ProfilePickerFieldKey = 'age' | 'heightCm' | 'weightKg';
+
+type ProfilePickerOption = {
+  value: string;
+  label: string;
+};
+
+type ProfilePickerConfig = {
+  field: ProfilePickerFieldKey;
+  label: string;
+  placeholder: string;
+  defaultValue: string;
+  options: ProfilePickerOption[];
+};
+
+type ProfilePickerSheetState = ProfilePickerConfig & {
+  draftValue: string;
+};
+
+type ProfilePickerFieldProps = {
+  label: string;
+  value: string;
+  placeholder: string;
+  onOpen: () => void;
+};
+
+type ProfilePickerSheetProps = {
+  label: string;
+  options: ProfilePickerOption[];
+  value: string;
+  onSelect: (value: string) => void;
+  onClose: () => void;
+  onConfirm: () => void;
+};
+
 type ResultStageEvidence = {
   label: string;
   value: string;
@@ -126,23 +198,50 @@ function parseDateString(value: string) {
   return new Date(Number(parts.year), Number(parts.month) - 1, Number(parts.day));
 }
 
-function getAgeFromBirthDate(value: string, now = new Date()) {
-  const birthDate = parseDateString(value);
-
-  if (!birthDate) {
+function getAssessmentAge(value: string) {
+  if (!value) {
     return null;
   }
 
-  let age = now.getFullYear() - birthDate.getFullYear();
-  const hasHadBirthdayThisYear =
-    now.getMonth() > birthDate.getMonth() ||
-    (now.getMonth() === birthDate.getMonth() && now.getDate() >= birthDate.getDate());
+  const age = Number(value);
 
-  if (!hasHadBirthdayThisYear) {
-    age -= 1;
+  if (!Number.isFinite(age) || age < 0) {
+    return null;
   }
 
-  return age;
+  return Math.round(age);
+}
+
+function normalizeProfilePickerValue(field: ProfilePickerFieldKey, value: string) {
+  if (!value) {
+    return '';
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed)) {
+    return '';
+  }
+
+  if (field === 'age') {
+    return String(Math.round(parsed));
+  }
+
+  return String(Math.trunc(parsed));
+}
+
+function formatProfileValue(field: ProfilePickerFieldKey, value: string) {
+  const normalizedValue = normalizeProfilePickerValue(field, value);
+
+  if (!normalizedValue) {
+    return '';
+  }
+
+  if (field === 'age') {
+    return `${normalizedValue}岁`;
+  }
+
+  return `${normalizedValue}${field === 'heightCm' ? 'cm' : 'kg'}`;
 }
 
 function getDaysSinceDate(value: string, now = new Date()) {
@@ -204,7 +303,7 @@ function getStageSummary(
   kmiTotal: number,
   now = new Date()
 ): ResultStageSummary {
-  const age = getAgeFromBirthDate(answers.birthDate, now);
+  const age = getAssessmentAge(answers.age);
   const lastPeriodGapDays = getDaysSinceDate(answers.lastPeriodDate, now);
   const lastPeriodValue = formatLastPeriodValue(answers, lastPeriodGapDays);
   const cycleChangeValue = getCycleChangeValue(answers);
@@ -330,130 +429,95 @@ function getStageSummary(
   };
 }
 
-function TextField({
-  field,
-  label,
-  value,
-  onAnswer,
-  type = 'text',
-  placeholder,
-  suffix,
-}: TextFieldProps) {
-  const id = `scene1-assessment-${field}`;
-
+function ProfilePickerField({ label, value, placeholder, onOpen }: ProfilePickerFieldProps) {
   return (
     <div className="scene1-assessment-field">
-      <label className="scene1-assessment-label" htmlFor={id}>
-        {label}
-      </label>
-      <div className="scene1-assessment-input-wrap">
-        <input
-          id={id}
-          className="scene1-assessment-input"
-          type={type}
-          value={value}
-          placeholder={placeholder}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => onAnswer(field, event.target.value)}
-        />
-        {suffix ? <span className="scene1-assessment-input-suffix">{suffix}</span> : null}
-      </div>
+      <button type="button" className="scene1-assessment-picker-trigger" aria-label={label} onClick={onOpen}>
+        <span className="scene1-assessment-picker-trigger-label">{label}</span>
+        <strong
+          className={
+            value
+              ? 'scene1-assessment-picker-trigger-value'
+              : 'scene1-assessment-picker-trigger-value placeholder'
+          }
+        >
+          {value || placeholder}
+        </strong>
+        <span className="scene1-assessment-picker-trigger-hint">{value ? '点击修改' : '点击选择'}</span>
+        <span aria-hidden="true" className="scene1-assessment-picker-trigger-arrow">
+          <svg viewBox="0 0 16 16">
+            <path d="M4 6L8 10L12 6" />
+          </svg>
+        </span>
+      </button>
     </div>
   );
 }
 
-function BirthDateField({
-  field,
+function ProfilePickerSheet({
   label,
+  options,
   value,
-  onAnswer,
-}: Omit<TextFieldProps, 'type' | 'placeholder' | 'suffix'>) {
-  const id = `scene1-assessment-${field}`;
-  const parsedParts = parseDateParts(value);
-  const [year, setYear] = useState(parsedParts.year);
-  const [month, setMonth] = useState(parsedParts.month);
-  const [day, setDay] = useState(parsedParts.day);
-  const availableDays = year && month
-    ? Array.from({ length: getDaysInMonth(Number(year), Number(month)) }, (_, index) => String(index + 1).padStart(2, '0'))
-    : Array.from({ length: 31 }, (_, index) => String(index + 1).padStart(2, '0'));
+  onSelect,
+  onClose,
+  onConfirm,
+}: ProfilePickerSheetProps) {
+  const listRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    setYear(parsedParts.year);
-    setMonth(parsedParts.month);
-    setDay(parsedParts.day);
-  }, [parsedParts.day, parsedParts.month, parsedParts.year]);
+    const activeOption = listRef.current?.querySelector<HTMLElement>('[data-picker-active="true"]');
 
-  const updateDatePart = (nextYear: string, nextMonth: string, nextDay: string) => {
-    setYear(nextYear);
-    setMonth(nextMonth);
-    setDay(nextDay);
-    onAnswer(field, buildDateValue(nextYear, nextMonth, nextDay));
-  };
+    if (activeOption && typeof activeOption.scrollIntoView === 'function') {
+      activeOption.scrollIntoView({ block: 'center' });
+    }
+  }, [label, value]);
 
   return (
-    <div className="scene1-assessment-field">
-      <label className="scene1-assessment-label" htmlFor={id}>
-        {label}
-      </label>
-      <div className="scene1-assessment-input-wrap">
-        <input
-          id={id}
-          className="scene1-assessment-input"
-          type="text"
-          inputMode="numeric"
-          value={value}
-          placeholder="YYYY-MM-DD"
-          onChange={(event: ChangeEvent<HTMLInputElement>) => onAnswer(field, event.target.value)}
-        />
-      </div>
-      <div className="scene1-assessment-birthdate-grid">
-        <label className="scene1-assessment-select-field">
-          <span className="scene1-assessment-select-label">年份</span>
-          <select
-            className="scene1-assessment-input scene1-assessment-select"
-            aria-label="出生年份"
-            value={year}
-            onChange={(event) => updateDatePart(event.target.value, month, day || '01')}
+    <div className="scene1-assessment-picker-overlay" onClick={onClose}>
+      <div
+        className="scene1-assessment-picker-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="scene1-assessment-picker-sheet-head">
+          <button
+            type="button"
+            className="scene1-assessment-picker-sheet-action scene1-assessment-picker-sheet-action-muted"
+            onClick={onClose}
           >
-            <option value="">年</option>
-            {dateYearOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
+            取消
+          </button>
+          <strong>{label}</strong>
+          <button type="button" className="scene1-assessment-picker-sheet-action" onClick={onConfirm}>
+            确定
+          </button>
+        </div>
+
+        <div className="scene1-assessment-picker-wheel-shell">
+          <div className="scene1-assessment-picker-wheel-fade top" aria-hidden="true" />
+          <div className="scene1-assessment-picker-wheel-fade bottom" aria-hidden="true" />
+          <div className="scene1-assessment-picker-wheel-highlight" aria-hidden="true" />
+          <div ref={listRef} className="scene1-assessment-picker-wheel">
+            {options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                data-picker-active={value === option.value ? 'true' : 'false'}
+                className={
+                  value === option.value
+                    ? 'scene1-assessment-picker-option active'
+                    : 'scene1-assessment-picker-option'
+                }
+                aria-pressed={value === option.value}
+                onClick={() => onSelect(option.value)}
+              >
+                {option.label}
+              </button>
             ))}
-          </select>
-        </label>
-        <label className="scene1-assessment-select-field">
-          <span className="scene1-assessment-select-label">月份</span>
-          <select
-            className="scene1-assessment-input scene1-assessment-select"
-            aria-label="出生月份"
-            value={month}
-            onChange={(event) => updateDatePart(year, event.target.value, day || '01')}
-          >
-            <option value="">月</option>
-            {dateMonthOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="scene1-assessment-select-field">
-          <span className="scene1-assessment-select-label">日期</span>
-          <select
-            className="scene1-assessment-input scene1-assessment-select"
-            aria-label="出生日期日"
-            value={day}
-            onChange={(event) => updateDatePart(year, month, event.target.value)}
-          >
-            <option value="">日</option>
-            {availableDays.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -469,7 +533,6 @@ function DateSelectorField({
   dayAriaLabel,
   onValueChange,
 }: StructuredDateFieldProps) {
-  const id = `scene1-assessment-${field}`;
   const parsedParts = parseDateParts(value);
   const [year, setYear] = useState(parsedParts.year);
   const [month, setMonth] = useState(parsedParts.month);
@@ -498,20 +561,7 @@ function DateSelectorField({
 
   return (
     <div className="scene1-assessment-field">
-      <label className="scene1-assessment-label" htmlFor={id}>
-        {label}
-      </label>
-      <div className="scene1-assessment-input-wrap">
-        <input
-          id={id}
-          className="scene1-assessment-input"
-          type="text"
-          inputMode="numeric"
-          value={value}
-          placeholder="YYYY-MM-DD"
-          onChange={(event: ChangeEvent<HTMLInputElement>) => syncValue(event.target.value)}
-        />
-      </div>
+      <p className="scene1-assessment-label">{label}</p>
       <div className="scene1-assessment-birthdate-grid">
         <label className="scene1-assessment-select-field">
           <span className="scene1-assessment-select-label">年份</span>
@@ -920,7 +970,6 @@ function CompletionState({ answers }: { answers: Scene1AssessmentState['answers'
             <span className="scene1-assessment-result-stage-kicker">阶段判断</span>
             <h2>{stageSummary.title}</h2>
           </div>
-          <span className={`scene1-assessment-result-badge-mini ${stageSummary.tone}`}>文档规则映射</span>
         </div>
         <p>{stageSummary.summary}</p>
         <div className="scene1-assessment-result-stage-evidence">
@@ -1146,6 +1195,37 @@ export function AssessmentStepRenderer({
   state,
   onAnswer,
 }: AssessmentStepRendererProps) {
+  const [profilePickerState, setProfilePickerState] = useState<ProfilePickerSheetState | null>(null);
+
+  const openProfilePicker = (field: ProfilePickerFieldKey) => {
+    const config = profilePickerConfigMap[field];
+    const currentValue = state.answers[field] || config.defaultValue;
+    const draftValue = normalizeProfilePickerValue(field, currentValue) || config.defaultValue;
+
+    setProfilePickerState({
+      field,
+      ...config,
+      draftValue,
+    });
+  };
+
+  const closeProfilePicker = () => {
+    setProfilePickerState(null);
+  };
+
+  const confirmProfilePicker = () => {
+    if (!profilePickerState) {
+      return;
+    }
+
+    const nextValue =
+      normalizeProfilePickerValue(profilePickerState.field, profilePickerState.draftValue) ||
+      profilePickerConfigMap[profilePickerState.field].defaultValue;
+
+    onAnswer(profilePickerState.field, nextValue);
+    setProfilePickerState(null);
+  };
+
   if (state.completed) {
     return <CompletionState answers={state.answers} />;
   }
@@ -1220,31 +1300,25 @@ export function AssessmentStepRenderer({
           </div>
 
           <div className="scene1-assessment-field-stack">
-            <BirthDateField
-              field="birthDate"
-              label="出生日期"
-              value={state.answers.birthDate}
-              onAnswer={onAnswer}
+            <ProfilePickerField
+              label="年龄"
+              value={formatProfileValue('age', state.answers.age)}
+              placeholder={profilePickerConfigMap.age.placeholder}
+              onOpen={() => openProfilePicker('age')}
             />
 
             <div className="scene1-assessment-two-col">
-              <TextField
-                field="heightCm"
-                label="身高 (cm)"
-                value={state.answers.heightCm}
-                onAnswer={onAnswer}
-                type="number"
-                placeholder="00.0"
-                suffix="CM"
+              <ProfilePickerField
+                label="身高"
+                value={formatProfileValue('heightCm', state.answers.heightCm)}
+                placeholder={profilePickerConfigMap.heightCm.placeholder}
+                onOpen={() => openProfilePicker('heightCm')}
               />
-              <TextField
-                field="weightKg"
-                label="体重 (kg)"
-                value={state.answers.weightKg}
-                onAnswer={onAnswer}
-                type="number"
-                placeholder="00.0"
-                suffix="KG"
+              <ProfilePickerField
+                label="体重"
+                value={formatProfileValue('weightKg', state.answers.weightKg)}
+                placeholder={profilePickerConfigMap.weightKg.placeholder}
+                onOpen={() => openProfilePicker('weightKg')}
               />
             </div>
           </div>
@@ -1254,6 +1328,19 @@ export function AssessmentStepRenderer({
           title="BMI 指数将结合身高和体重自动辅助判断"
           body="这能帮助我们更完整地理解代谢负担与身体阶段变化之间的关系，但不会单独作为结论依据。"
         />
+
+        {profilePickerState ? (
+          <ProfilePickerSheet
+            label={profilePickerState.label}
+            options={profilePickerState.options}
+            value={profilePickerState.draftValue}
+            onSelect={(value) =>
+              setProfilePickerState((prev) => (prev ? { ...prev, draftValue: value } : prev))
+            }
+            onClose={closeProfilePicker}
+            onConfirm={confirmProfilePicker}
+          />
+        ) : null}
       </div>
     );
   }

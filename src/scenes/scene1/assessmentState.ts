@@ -11,7 +11,7 @@ export type Scene1AssessmentState = {
 };
 
 const emptyAnswers: AssessmentAnswers = {
-  birthDate: '',
+  age: '',
   heightCm: '',
   weightKg: '',
   periodPresence: '',

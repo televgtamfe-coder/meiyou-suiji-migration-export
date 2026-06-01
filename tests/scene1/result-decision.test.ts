@@ -5,7 +5,7 @@ import type { KmiScoreDetail } from '../../src/scenes/scene1/kmiScoring';
 
 function createAnswers(overrides: Partial<AssessmentAnswers> = {}): AssessmentAnswers {
   return {
-    birthDate: '1984-05-01',
+    age: '42',
     heightCm: '165',
     weightKg: '58',
     periodPresence: 'yes',

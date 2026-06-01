@@ -6,6 +6,21 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { AppRouter } from '../../src/app/router';
 
+async function pickProfileValue(user: ReturnType<typeof userEvent.setup>, field: string, option: string) {
+  await user.click(screen.getByRole('button', { name: field }));
+
+  const dialog = screen.getByRole('dialog', { name: field });
+
+  await user.click(within(dialog).getByRole('button', { name: option }));
+  await user.click(within(dialog).getByRole('button', { name: '确定' }));
+}
+
+async function fillProfileStep(user: ReturnType<typeof userEvent.setup>) {
+  await pickProfileValue(user, '年龄', '42岁');
+  await pickProfileValue(user, '身高', '165cm');
+  await pickProfileValue(user, '体重', '58kg');
+}
+
 describe('scene1 assessment flow', () => {
   it('uses the approved standardized typography scale across steps 1-6 and the result page', () => {
     const cssText = readFileSync(resolve(process.cwd(), 'src/styles/base.css'), 'utf8');
@@ -50,9 +65,7 @@ describe('scene1 assessment flow', () => {
     const secondNextButton = screen.getByRole('button', { name: '下一步' });
     expect(secondNextButton).toBeDisabled();
 
-    await user.type(screen.getByLabelText('出生日期'), '1984-05-01');
-    await user.type(screen.getByLabelText('身高 (cm)'), '165');
-    await user.type(screen.getByLabelText('体重 (kg)'), '58');
+    await fillProfileStep(user);
 
     expect(screen.getByRole('button', { name: '下一步' })).toBeEnabled();
     await user.click(screen.getByRole('button', { name: '下一步' }));
@@ -66,9 +79,9 @@ describe('scene1 assessment flow', () => {
     await user.click(screen.getByRole('button', { name: '记不清了' }));
     await user.click(screen.getByRole('button', { name: '上一步' }));
 
-    expect(screen.getByDisplayValue('1984-05-01')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('165')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('58')).toBeInTheDocument();
+    expect(screen.getByText('42岁')).toBeInTheDocument();
+    expect(screen.getByText('165cm')).toBeInTheDocument();
+    expect(screen.getByText('58kg')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '下一步' }));
     expect(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' })).toHaveClass('active');
@@ -77,7 +90,7 @@ describe('scene1 assessment flow', () => {
     expect(screen.getByRole('button', { name: '记不清了' })).toHaveClass('active');
   }, 15000);
 
-  it('lets users pick birth date with direct year month day selectors', async () => {
+  it('lets users pick age, height and weight with bottom pickers', async () => {
     const user = userEvent.setup();
 
     render(
@@ -89,15 +102,24 @@ describe('scene1 assessment flow', () => {
     await user.click(screen.getByRole('button', { name: '立即评估' }));
     await user.click(screen.getByRole('button', { name: '下一步' }));
 
-    expect(screen.getByRole('combobox', { name: '出生年份' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: '出生月份' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: '出生日期日' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '年龄' }));
+    expect(screen.getByRole('dialog', { name: '年龄' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '42岁' }));
+    await user.click(screen.getByRole('button', { name: '确定' }));
 
-    await user.selectOptions(screen.getByRole('combobox', { name: '出生年份' }), '1984');
-    await user.selectOptions(screen.getByRole('combobox', { name: '出生月份' }), '05');
-    await user.selectOptions(screen.getByRole('combobox', { name: '出生日期日' }), '01');
+    await user.click(screen.getByRole('button', { name: '身高' }));
+    expect(screen.getByRole('dialog', { name: '身高' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '165cm' }));
+    await user.click(screen.getByRole('button', { name: '确定' }));
 
-    expect(screen.getByLabelText('出生日期')).toHaveValue('1984-05-01');
+    await user.click(screen.getByRole('button', { name: '体重' }));
+    expect(screen.getByRole('dialog', { name: '体重' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '58kg' }));
+    await user.click(screen.getByRole('button', { name: '确定' }));
+
+    expect(screen.getByText('42岁')).toBeInTheDocument();
+    expect(screen.getByText('165cm')).toBeInTheDocument();
+    expect(screen.getByText('58kg')).toBeInTheDocument();
   });
 
   it('lets users pick the last period date with direct year month day selectors', async () => {
@@ -112,16 +134,13 @@ describe('scene1 assessment flow', () => {
     await user.click(screen.getByRole('button', { name: '立即评估' }));
     await user.click(screen.getByRole('button', { name: '下一步' }));
 
-    await user.selectOptions(screen.getByRole('combobox', { name: '出生年份' }), '1984');
-    await user.selectOptions(screen.getByRole('combobox', { name: '出生月份' }), '05');
-    await user.selectOptions(screen.getByRole('combobox', { name: '出生日期日' }), '01');
-    await user.type(screen.getByLabelText('身高 (cm)'), '165');
-    await user.type(screen.getByLabelText('体重 (kg)'), '58');
+    await fillProfileStep(user);
     await user.click(screen.getByRole('button', { name: '下一步' }));
 
     expect(screen.getByRole('combobox', { name: '最近月经年份' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: '最近月经月份' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: '最近月经日期' })).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('YYYY-MM-DD')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' }));
     await user.click(screen.getByRole('button', { name: '基本无变化，周期稳定' }));
@@ -130,11 +149,13 @@ describe('scene1 assessment flow', () => {
     await user.selectOptions(screen.getByRole('combobox', { name: '最近月经月份' }), '03');
     await user.selectOptions(screen.getByRole('combobox', { name: '最近月经日期' }), '08');
 
-    expect(screen.getByLabelText('4. 最近一次月经距离现在多久？')).toHaveValue('2026-03-08');
+    expect(screen.getByRole('combobox', { name: '最近月经年份' })).toHaveValue('2026');
+    expect(screen.getByRole('combobox', { name: '最近月经月份' })).toHaveValue('03');
+    expect(screen.getByRole('combobox', { name: '最近月经日期' })).toHaveValue('08');
     expect(screen.getByRole('button', { name: '下一步' })).toBeEnabled();
   });
 
-  it('removes the assessment title copy from the top header', async () => {
+  it('returns to the commercial scene from the first assessment step', async () => {
     const user = userEvent.setup();
 
     render(
@@ -145,15 +166,32 @@ describe('scene1 assessment flow', () => {
 
     await user.click(screen.getByRole('button', { name: '立即评估' }));
 
-    const header = document.querySelector('.scene1-assessment-header');
+    const previousButton = screen.getByRole('button', { name: '上一步' });
 
-    expect(header).not.toBeNull();
-    expect(header?.textContent).toContain('返回');
-    expect(header?.textContent).not.toContain('scene1 测评');
-    expect(header?.textContent).not.toContain('围绝经期评估');
+    expect(previousButton).toBeEnabled();
+    await user.click(previousButton);
+
+    expect(screen.queryByTestId('scene1-assessment-shell')).not.toBeInTheDocument();
+    expect(screen.getByTestId('scene1-record-list')).toBeInTheDocument();
+    expect(screen.queryByText('个人健康洞察')).not.toBeInTheDocument();
   });
 
-  it('resets the in-progress flow when closed', async () => {
+  it('removes the top-left back button from the assessment shell header', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/scene1']}>
+        <AppRouter />
+      </MemoryRouter>
+    );
+
+    await user.click(screen.getByRole('button', { name: '立即评估' }));
+
+    expect(document.querySelector('.scene1-assessment-header')).toBeNull();
+    expect(screen.queryByRole('button', { name: '返回' })).not.toBeInTheDocument();
+  });
+
+  it('resets the in-progress flow when returning to the commercial scene', async () => {
     const user = userEvent.setup();
 
     render(
@@ -164,11 +202,12 @@ describe('scene1 assessment flow', () => {
 
     await user.click(screen.getByRole('button', { name: '立即评估' }));
     await user.click(screen.getByRole('button', { name: '下一步' }));
-    await user.type(screen.getByLabelText('出生日期'), '1984-05-01');
-    await user.click(screen.getByRole('button', { name: '返回' }));
+    await fillProfileStep(user);
+    await user.click(screen.getByRole('button', { name: '上一步' }));
+    await user.click(screen.getByRole('button', { name: '上一步' }));
 
-    expect(screen.getByText('开启您的围绝经期健康评估')).toBeInTheDocument();
-    expect(screen.queryByDisplayValue('1984-05-01')).not.toBeInTheDocument();
+    expect(screen.getByTestId('scene1-record-list')).toBeInTheDocument();
+    expect(screen.queryByText('42岁')).not.toBeInTheDocument();
   });
 
   it('completes the KMI steps and shows the completion state', async () => {
@@ -192,9 +231,7 @@ describe('scene1 assessment flow', () => {
 
     await user.click(screen.getByRole('button', { name: '立即评估' }));
     await user.click(screen.getByRole('button', { name: '下一步' }));
-    await user.type(screen.getByLabelText('出生日期'), '1984-05-01');
-    await user.type(screen.getByLabelText('身高 (cm)'), '165');
-    await user.type(screen.getByLabelText('体重 (kg)'), '58');
+    await fillProfileStep(user);
     await user.click(screen.getByRole('button', { name: '下一步' }));
     await user.click(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' }));
     await user.click(screen.getByRole('button', { name: '周期缩短（比平时少7天以上）' }));
@@ -236,6 +273,7 @@ describe('scene1 assessment flow', () => {
 
     expect(screen.getByText('评估已完成')).toBeInTheDocument();
     expect(screen.getByText('围绝经期过渡早期')).toBeInTheDocument();
+    expect(screen.queryByText('文档规则映射')).not.toBeInTheDocument();
     expect(screen.getByText('判断依据')).toBeInTheDocument();
     expect(screen.getByText('年龄')).toBeInTheDocument();
     expect(screen.getByText('末次月经')).toBeInTheDocument();
@@ -257,7 +295,7 @@ describe('scene1 assessment flow', () => {
     expect(radarContainer?.querySelector('.scene1-assessment-result-radar-metric-bottom-left')).not.toBeNull();
     expect(radarContainer?.querySelector('.scene1-assessment-result-radar-metric-top-left')).not.toBeNull();
     expect(screen.getByRole('button', { name: '上一步' })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: '返回' }).length).toBeGreaterThan(1);
+    expect(screen.getAllByRole('button', { name: '返回' })).toHaveLength(1);
     expect(screen.getByRole('button', { name: '进入围绝经期模式' })).toBeInTheDocument();
   });
 
@@ -282,9 +320,7 @@ describe('scene1 assessment flow', () => {
 
     await user.click(screen.getByRole('button', { name: '立即评估' }));
     await user.click(screen.getByRole('button', { name: '下一步' }));
-    await user.type(screen.getByLabelText('出生日期'), '1984-05-01');
-    await user.type(screen.getByLabelText('身高 (cm)'), '165');
-    await user.type(screen.getByLabelText('体重 (kg)'), '58');
+    await fillProfileStep(user);
     await user.click(screen.getByRole('button', { name: '下一步' }));
     await user.click(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' }));
     await user.click(screen.getByRole('button', { name: '周期缩短（比平时少7天以上）' }));
@@ -331,9 +367,7 @@ describe('scene1 assessment flow', () => {
 
     await user.click(screen.getByRole('button', { name: '立即评估' }));
     await user.click(screen.getByRole('button', { name: '下一步' }));
-    await user.type(screen.getByLabelText('出生日期'), '1984-05-01');
-    await user.type(screen.getByLabelText('身高 (cm)'), '165');
-    await user.type(screen.getByLabelText('体重 (kg)'), '58');
+    await fillProfileStep(user);
     await user.click(screen.getByRole('button', { name: '下一步' }));
 
     expect(screen.getByText('围绝经期的识别通常需要结合年龄、月经变化和症状综合判断。')).toBeInTheDocument();
@@ -393,9 +427,7 @@ describe('scene1 assessment flow', () => {
 
     await user.click(screen.getByRole('button', { name: '立即评估' }));
     await user.click(screen.getByRole('button', { name: '下一步' }));
-    await user.type(screen.getByLabelText('出生日期'), '1984-05-01');
-    await user.type(screen.getByLabelText('身高 (cm)'), '165');
-    await user.type(screen.getByLabelText('体重 (kg)'), '58');
+    await fillProfileStep(user);
     await user.click(screen.getByRole('button', { name: '下一步' }));
     await user.click(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' }));
     await user.click(screen.getByRole('button', { name: '周期缩短（比平时少7天以上）' }));

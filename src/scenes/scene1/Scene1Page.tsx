@@ -1,10 +1,9 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SceneControls } from '../../dev/SceneControls';
 import {
   Scene1AssessmentState,
   answerAssessmentField,
-  closeAssessmentFlow,
   createAssessmentState,
   createAssessmentStateWithoutEntry,
   dismissEntryModal,
@@ -20,7 +19,7 @@ import { FloatingAnalysisNotice } from './components/FloatingAnalysisNotice';
 import { StatusBar } from './components/StatusBar';
 import { getKmiScoreSummary, pickCompletedKmiAnswers } from './kmiScoring';
 import { writeScene1KmiScore } from './kmiScoreStorage';
-import { perimenopauseSymptomIconMap } from './perimenopauseSymptomIcons';
+import { resolvePerimenopauseSymptomIcon } from './perimenopauseSymptomItemIcons';
 import {
   PerimenopauseSymptomItemId,
   perimenopauseSymptomSections,
@@ -334,6 +333,67 @@ function RecordRow({
   );
 }
 
+function PerimenopauseTipModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+
+    const closeTimer = window.setTimeout(() => {
+      onClose();
+    }, 2000);
+
+    return () => window.clearTimeout(closeTimer);
+  }, [open, onClose]);
+
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div
+      className="scene1-perimenopause-tip-overlay"
+      data-testid="scene1-perimenopause-tip-overlay"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="记录提示"
+        className="scene1-perimenopause-tip-modal"
+        data-testid="scene1-perimenopause-tip-modal"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="scene1-perimenopause-tip-close"
+          aria-label="关闭提示"
+          onClick={onClose}
+        >
+          ×
+        </button>
+        <p className="scene1-perimenopause-tip-text">
+          <span className="scene1-perimenopause-tip-text-raw" aria-hidden="true">
+            坚持记录14天 掌握你的身体变化
+          </span>
+          <span className="scene1-perimenopause-tip-text-line" aria-hidden="true">
+            坚持记录14天
+          </span>
+          <span className="scene1-perimenopause-tip-text-line" aria-hidden="true">
+            掌握你的身体变化
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function PerimenopauseRecordList({
   periodConfirmed,
   onConfirmPeriodStart,
@@ -343,11 +403,17 @@ function PerimenopauseRecordList({
 }) {
   const [symptomExpanded, setSymptomExpanded] = useState(true);
   const [selectedSymptoms, setSelectedSymptoms] = useState<PerimenopauseSymptomItemId[]>([]);
+  const [tipModalOpen, setTipModalOpen] = useState(false);
 
   function toggleSymptom(id: PerimenopauseSymptomItemId) {
     setSelectedSymptoms((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
+  }
+
+  function closeTipModal() {
+    setTipModalOpen(false);
+    setSymptomExpanded(false);
   }
 
   return (
@@ -425,12 +491,14 @@ function PerimenopauseRecordList({
                                 ) : null}
                                 <div className="scene1-perimenopause-kmi-icon-slot">
                                   <img
-                                    src={perimenopauseSymptomIconMap[item.iconField]}
+                                    src={resolvePerimenopauseSymptomIcon(item)}
                                     alt=""
                                     aria-hidden="true"
                                     data-testid="scene1-perimenopause-kmi-icon"
                                     data-kmi-field={item.iconField}
                                     className={`scene1-perimenopause-kmi-icon scene1-perimenopause-kmi-icon-${item.iconField}`}
+                                    loading="lazy"
+                                    decoding="async"
                                   />
                                 </div>
                                 <span className="scene1-perimenopause-kmi-label">{item.label}</span>
@@ -441,8 +509,28 @@ function PerimenopauseRecordList({
                       </div>
                     </section>
                   ))}
+                  <div
+                    className="scene1-perimenopause-symptom-action-bar"
+                    data-testid="scene1-perimenopause-symptom-action-bar"
+                  >
+                    <button
+                      type="button"
+                      className="scene1-perimenopause-symptom-action-btn scene1-perimenopause-symptom-action-btn-cancel"
+                      onClick={() => setSymptomExpanded(false)}
+                    >
+                      取消
+                    </button>
+                    <button
+                      type="button"
+                      className="scene1-perimenopause-symptom-action-btn scene1-perimenopause-symptom-action-btn-confirm"
+                      onClick={() => setTipModalOpen(true)}
+                    >
+                      确定
+                    </button>
+                  </div>
                 </div>
               ) : null}
+              <PerimenopauseTipModal open={tipModalOpen} onClose={closeTipModal} />
             </RecordRow>
           );
         }
@@ -629,7 +717,7 @@ export function Scene1Page({ routeVariant = 'default' }: Scene1PageProps) {
       <PerimenopauseAssessmentShell
         state={assessmentState}
         onAnswer={handleAssessmentAnswer}
-        onClose={() => setAssessmentState(closeAssessmentFlow())}
+        onExitToScene1={() => setAssessmentState(createAssessmentStateWithoutEntry())}
         onReturnToScene1={() => setAssessmentState((prev) => exitAssessmentFlow(prev))}
         onEnterPerimenopauseMode={() => {
           setAssessmentState((prev) => exitAssessmentFlow(prev));
