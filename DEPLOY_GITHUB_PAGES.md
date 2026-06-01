@@ -82,6 +82,12 @@
    - GitHub Pages 地址是否还是原来那条 github.io
    所以每次更新后，必须优先从手机视角核查这些问题。
 
+6. 发生过一次“Vercel 已更新，但 GitHub Pages 验收地址仍返回旧 bundle”的情况：
+   - 当时 Vercel 已更新到新资源：`index-BvqSwz6_.js`、`index-Bej1CNHb.css`
+   - GitHub Pages 验收地址一开始仍返回旧资源：`index-BPH_8cwP.js`、`index-BkQ6IUPp.css`
+   - 根因是流程误判：只看了 Vercel 已更新或 GitHub Actions success，没有先以 GitHub Pages 验收地址做最终核查
+   - 后续部署是否成功，必须优先以这个地址为准：`https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1`
+
 ## 四、部署前必须检查
 
 1. 确认 git remote 仍然指向：
@@ -126,6 +132,13 @@
    - 不要新建 project
    - 不要重新 import 一个新仓库
 
+如果出现“Vercel 已更新，但 Pages 看起来没变”：
+- 先确认最新 commit 已在 `main`
+- 再确认 `Deploy GitHub Pages` workflow 对应最新 SHA 且成功
+- 抓取 GitHub Pages 公网 `index.html`，比对 asset hash 是否与本地 `docs/index.html` 或 `dist/index.html` 一致
+- 等待 1 到 3 分钟后强刷缓存
+- 若仍然是旧 bundle，重跑现有 `pages.yml` workflow，不要新建 Pages / Vercel 项目
+
 ## 六、和用户沟通时的要求
 
 1. 明确告诉用户：
@@ -157,6 +170,8 @@
 
 6. 修改完成后，直接按已有方式更新，不要再走第一次部署时的探索流程
 
+7. 不能只因为 Vercel ready 或 GitHub Actions success 就宣布更新完成；GitHub Pages 验收地址才是最终验收源
+
 ## 八、默认输出格式
 
 完成部署后，输出内容至少包括：
@@ -168,6 +183,7 @@
 5. 本次更新内容摘要
 6. 验收地址
 7. 若手机端未立即生效，需要提醒用户等待 1 到 3 分钟并强刷缓存
+8. GitHub Pages 验收地址是否已实际检查并通过
 
 ## 九、禁止事项
 
