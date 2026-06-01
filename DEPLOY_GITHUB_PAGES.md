@@ -1,239 +1,176 @@
-# GitHub Pages 更新 SOP
+# 部署与发布规则
 
-这份文档记录当前项目已经验证可用的公开更新流程，目标是：
+本文件与 `AGENTS.md` 保持一致，作为项目内的部署说明与备查文档。
+后续更新 GitHub / GitHub Pages / Vercel 时，以本文件和 `AGENTS.md` 为准，不再沿用旧版本规则。
 
-- 后续继续沿用同一个 GitHub 仓库
-- 后续继续沿用同一个 GitHub Pages 地址
-- 不再重复踩“推了代码但公网没更新”的坑
+当用户提出以下任意意思时，自动命中本流程：
 
-最后一次按本文档完整验证通过的日期：`2026-05-29`
+- 更新 GitHub
+- 更新 Pages
+- 更新线上版本
+- 发布到公网
+- 同步到 github.io
+- 更新 GitHub 和 Vercel
+- 部署最新代码
+- 推送线上可访问版本
 
-## 固定发布资产
+项目本地路径：
+`C:\Users\MeetYou\Desktop\meiyou-suiji-migration-export`
 
-- GitHub 仓库：`https://github.com/televgtamfe-coder/meiyouds-weijuejingqi`
-- GitHub Pages：`https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/`
-- 主审查入口：`https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1`
+## 一、当前部署资产
 
-常用 hash 路由：
+1. GitHub 仓库已经存在，必须沿用这个，不要新建仓库：
+   `https://github.com/televgtamfe-coder/meiyouds-weijuejingqi`
 
-- `#/scene1`
-- `#/scene1-home`
-- `#/scene1-message`
-- `#/scene1-my`
-- `#/scene1-perimenopause`
-- `#/scene1-prep`
-- `#/scene1-parenting`
+2. GitHub Pages 对外地址已经存在，必须沿用这个，不要换名字：
+   `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/`
 
-## 硬性约束
+3. 页面实际访问使用 hash 路由，审查和验收时使用这些地址：
+   `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1`
+   `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-home`
+   `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-message`
+   `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-my`
+   `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-perimenopause`
 
-- 不要新建 GitHub 仓库。
-- 不要把公开名字改回 `meiyou-suiji`。
-- 统一沿用 `meiyouds-weijuejingqi`。
-- 默认只维护 GitHub Pages 这一个公开渠道。
-- 只有用户再次明确要求时，才更新 Vercel；而且只能更新现有 Vercel 项目，不能新建。
-- 不要随意回退已经修好的 `.gitignore`。
-- 不要随意改 `vite.config.ts` 里当前可用的 Pages 配置。
+4. Vercel 以前接通过，但用户后续明确说过“只保留 githubio”。
+   默认情况下：
+   - 只更新 GitHub / GitHub Pages
+   - 不主动更新 Vercel
+   只有当用户这次明确再次要求“同时更新 Vercel”时，才更新现有 Vercel 项目。
 
-## 当前发布事实
+## 二、最重要的历史约束
 
-- 路由使用的是 `HashRouter`，静态托管依赖 `#/scene1` 这种地址。
-- GitHub Actions 工作流文件是 `.github/workflows/pages.yml`。
-- 触发分支是 `main`。
-- 实操上，`docs/` 必须视为公开发布产物的一部分，更新公网前要一起刷新。
+1. 不要再用 `meiyou-suiji` 作为仓库名、项目名、公开地址名。
+   统一使用：
+   `meiyouds-weijuejingqi`
 
-## 这次确认过的关键坑
+2. 不要重建 GitHub 仓库
 
-### 1. 不能只改源码，不刷新 `docs/`
+3. 不要重建 Vercel 项目
 
-这次已经验证：后续公开更新的安全做法是：
+4. 必须直接复用之前已经存在的同一套仓库 / Pages / Vercel 项目
 
-1. 改源码
-2. 本地验证
-3. 运行 `node scripts/build-standalone.js`
-4. 把刷新后的 `docs/` 一起提交
-5. 再推到 `main`
+5. 不要改坏 GitHub Pages 的 base 配置
 
-不要依赖“只推源码，公网会自动变新”这种侥幸路径。
+6. 不要把已经修过的 `.gitignore` 和 `vite.config.ts` 回退
 
-### 2. 当前本地分支不一定能直接推到 `main`
+## 三、历史上遇到过的问题，更新时必须规避
 
-本地工作分支可能是 `public-main`。
+1. 以前曾生成过错误名字的仓库和地址，后来已经统一改成：
+   `meiyouds-weijuejingqi`
+   后续任何更新都必须保持这个名字不变。
 
-所以不要想当然执行裸 `git push`。
+2. GitHub Pages 手机上看起来“没更新”，很多时候不是没推上去，而是：
+   - Pages 还在发布
+   - 浏览器缓存没刷新
+   所以推送后必须等待 1 到 3 分钟，再强刷验证。
 
-公开发布时统一使用：
+3. “我的”页底部栏以前在公网不显示，根因是页面高度被写死成 `812px`。
+   后续不要再把整页高度写死，尤其不要把底部 tab 所在页面写死高度。
 
-```bash
-git push origin HEAD:main
-```
+4. 公网图片加载慢，尤其是：
+   - 首页 feeds 图片
+   - 消息页头像
+   后续更新时不要再引入超大的未优化图片；
+   要保留 `loading="lazy"`、`decoding="async"`；
+   必要时主动压缩素材。
 
-这样可以确保更新进入真正触发公开站点的 `main`。
+5. 用户非常在意：
+   - 手机端显示
+   - 底部 tab 是否完整显示
+   - GitHub Pages 地址是否还是原来那条 github.io
+   所以每次更新后，必须优先从手机视角核查这些问题。
 
-### 3. 手机上看起来没更新，不一定是没推上去
+## 四、部署前必须检查
 
-优先按这个顺序排查：
+1. 确认 git remote 仍然指向：
+   `televgtamfe-coder/meiyouds-weijuejingqi`
 
-1. GitHub Pages 还在发布，等 `1` 到 `3` 分钟
-2. 手机浏览器缓存没刷新，先强刷
-3. 打开的不是正确的 hash 路由
-4. `docs/index.html` 没刷新到最新资源哈希
+2. 确认 `vite.config.ts` 里 GitHub Pages 的 `base` 仍然匹配仓库名：
+   `/meiyouds-weijuejingqi/`
 
-## 发布前必须检查
+3. 确认路由仍然可通过 hash 路由访问
 
-### 仓库与分支
+4. 确认底部 tab 没有被页面内容顶出去
 
-```bash
-git remote -v
-git branch -vv
-```
+5. 先本地验证：
+   - `npm run build`
+   - 必要时跑相关 scene1 测试
 
-确认：
+## 五、推荐更新流程
 
-- 远端仍然是 `televgtamfe-coder/meiyouds-weijuejingqi`
-- 发布目标仍然是 `main`
+1. 在本地完成代码修改
 
-### 路由与配置
+2. 本地验证：
+   - `npm run build`
+   - 跑本次改动相关测试
 
-确认以下文件不要被误改坏：
+3. 提交并推送到已有 GitHub 仓库
 
-- `src/main.tsx` 仍然是 `HashRouter`
-- `vite.config.ts` 保持当前已验证可用的 Pages 配置
+4. 等 GitHub Pages 自动发布
+   - 不要改项目名
+   - 不要改仓库名
+   - 不要新建 Pages 项目
 
-### 页面层面
+5. 用以下地址直接验收：
+   - `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1`
+   - `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-home`
+   - `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-message`
+   - `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-my`
+   - `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-perimenopause`
 
-重点看手机效果：
+6. 如果用户这次明确要求同时更新 Vercel：
+   - 只更新现有 Vercel 项目
+   - 直接触发现有项目重新部署最新 commit
+   - 不要新建 project
+   - 不要重新 import 一个新仓库
 
-- 底部 tab 不能被内容顶出去
-- 不要把整页高度重新写死成 `812px`
-- 滚动区必须留在手机壳内部
-- `scene1` 相关 hash 路由必须还能打开
+## 六、和用户沟通时的要求
 
-## 推荐更新流程
+1. 明确告诉用户：
+   - 这次是“沿用原 GitHub 仓库和原 Pages 地址更新”
+   - “没有重建”
 
-### 1. 本地开发
+2. 更新后要给用户：
+   - GitHub 仓库地址
+   - GitHub Pages 可直接访问地址
+   - 本次相对上次更新的内容
 
-先完成需求改动。
+3. 如果手机端看起来没变化，先从以下三项排查：
+   - Pages 发布延迟
+   - 浏览器缓存
+   - hash 路由地址是否正确
+   不要立刻判断为“代码没推上去”。
 
-### 2. 本地验证
+## 七、执行原则
 
-至少执行：
+1. 默认以 GitHub Pages 为唯一主发布渠道
 
-```bash
-npm run build
-node scripts/build-standalone.js
-```
+2. Vercel 只有在用户再次明确要求时才一起更新
 
-如果改的是 `scene1`，优先补跑相关测试，例如：
+3. 绝对不要重建 repo / Pages / project
 
-```bash
-npm test -- tests/scene1/scene1-ui.test.tsx tests/scene1/scene1-assessment-flow.test.tsx
-```
+4. 绝对不要改公开地址名字
 
-如果改的是其他模块，也按“就近、针对性”的原则跑对应测试。
+5. 修改完成后，直接按已有方式更新，不要再走第一次部署时的探索流程
 
-### 3. 检查 `docs/` 是否已刷新
+## 八、默认输出格式
 
-重点检查：
+完成部署后，输出内容至少包括：
 
-- `dist/index.html` 是否已经生成最新资源哈希
-- `docs/index.html` 是否已经切到同一组哈希
-- `docs/assets/` 是否已经包含对应的新文件
+1. 是否已更新 GitHub
+2. 是否已更新 GitHub Pages
+3. 是否已更新 Vercel
+4. 本次沿用的仓库 / 项目 / 地址
+5. 本次更新内容摘要
+6. 验收地址
+7. 若手机端未立即生效，需要提醒用户等待 1 到 3 分钟并强刷缓存
 
-### 4. 提交代码
+## 九、禁止事项
 
-可以按两种方式做：
-
-#### 方式 A：一次提交
-
-源码和 `docs/` 一起提交。
-
-#### 方式 B：两次提交
-
-这次实践验证过，下面这种方式最稳：
-
-1. 先提交源码改动
-2. 再刷新 `docs/`
-3. 再单独提交一次 `docs/`
-
-比如：
-
-```bash
-git commit -m "feat: xxx"
-git commit -m "chore: refresh github pages docs"
-```
-
-### 5. 显式推送到 `main`
-
-```bash
-git push origin HEAD:main
-```
-
-不要用裸 `git push` 代替这一步。
-
-### 6. 等待 GitHub Pages 发布
-
-推送后等待 `1` 到 `3` 分钟，再做公网验证。
-
-### 7. 公网验收
-
-优先检查这些地址：
-
-- `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1`
-- `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-home`
-- `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-message`
-- `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-my`
-- `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-perimenopause`
-
-如果本次还改了其他独立页，也要把对应地址一起验，例如：
-
-- `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-prep`
-- `https://televgtamfe-coder.github.io/meiyouds-weijuejingqi/#/scene1-parenting`
-
-## 公网看起来没更新时的恢复流程
-
-按这个顺序来：
-
-### 快速排查
-
-1. 先等几分钟
-2. 手机浏览器强刷
-3. 确认打开的是正确 hash 路由
-
-### 如果还是旧包
-
-重新执行：
-
-```bash
-npm run build
-node scripts/build-standalone.js
-git status --short docs
-```
-
-然后确认 `docs/index.html` 已经切到新 hash，再把 `docs/` 提交并重新推：
-
-```bash
-git add docs
-git commit -m "chore: refresh github pages docs"
-git push origin HEAD:main
-```
-
-## 发布完成后的标准回报
-
-每次对外回报时都要明确说明：
-
-- 这次是沿用原 GitHub 仓库更新
-- 这次是沿用原 GitHub Pages 地址更新
-- 没有重建仓库
-- 没有改公开地址名字
-
-并附上：
-
-- GitHub 仓库地址
-- GitHub Pages 地址
-- 本次相对上次的改动点
-
-## 一句话版本
-
-后续公开更新就按这条铁律执行：
-
-**改源码 -> 本地验证 -> 刷新 `docs/` -> 提交源码与 `docs/` -> `git push origin HEAD:main` -> 等待 Pages -> 用 hash 路由验收。**
+1. 禁止新建仓库
+2. 禁止新建 Vercel 项目
+3. 禁止更换仓库名
+4. 禁止更换 github.io 地址名
+5. 禁止回退部署相关修复
+6. 禁止绕开本地验证直接推送
