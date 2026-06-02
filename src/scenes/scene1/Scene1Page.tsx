@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { CSSProperties, ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SceneControls } from '../../dev/SceneControls';
 import {
@@ -24,7 +24,16 @@ import {
   PerimenopauseSymptomItemId,
   perimenopauseSymptomSections,
 } from './perimenopauseSymptomSections';
-import { calendarDays, calendarWeekdays, legendItems, quickRecordItems, scene1Modes } from './scene1Data';
+import {
+  Scene1MoodOptionId,
+  calendarDays,
+  calendarWeekdays,
+  legendItems,
+  quickRecordItems,
+  scene1MoodGroups,
+  scene1MoodPreviewItems,
+  scene1Modes,
+} from './scene1Data';
 import { confirmPeriodStart, createScene1State, selectScene1Mode } from './scene1State';
 
 type Scene1PageProps = {
@@ -32,8 +41,64 @@ type Scene1PageProps = {
 };
 
 type QuickRecordItem = (typeof quickRecordItems)[number];
+type RectSnapshot = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
+
+type PreparedPerimenopauseDropItem = {
+  id: PerimenopauseSymptomItemId;
+  src: string;
+  startRect: RectSnapshot;
+};
+
+type PerimenopauseDropAnimation = PreparedPerimenopauseDropItem & {
+  slotIndex: number;
+  endRect: RectSnapshot;
+};
+
+type PerimenopauseDropSlotItem = {
+  id: PerimenopauseSymptomItemId;
+  src: string;
+};
 
 const CALENDAR_MONTH_LABEL = "4\u6708";
+const PERIMENOPAUSE_MAX_DROP_SLOTS = 4;
+const PERIMENOPAUSE_DROP_STEP_MS = 450;
+const PERIMENOPAUSE_DROP_SETTLE_MS = 600;
+
+function createEmptyPerimenopauseDropSlots(): Array<PerimenopauseDropSlotItem | null> {
+  return Array.from({ length: PERIMENOPAUSE_MAX_DROP_SLOTS }, () => null);
+}
+
+function snapshotElementRect(element: Element | null): RectSnapshot | null {
+  if (!element) {
+    return null;
+  }
+
+  const rect = element.getBoundingClientRect();
+
+  return {
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height,
+  };
+}
+
+function findPerimenopauseSymptomItem(id: PerimenopauseSymptomItemId) {
+  for (const section of perimenopauseSymptomSections) {
+    const match = section.items.find((item) => item.id === id);
+
+    if (match) {
+      return match;
+    }
+  }
+
+  return null;
+}
 
 function MoodSmileIcon() {
   return (
@@ -316,10 +381,25 @@ function RecordRow({
               ) : null}
               {item.kind === 'text' ? <div className="record-text-suffix">{item.trailingText}</div> : null}
               {item.kind === 'badges' ? (
-                <div className="record-badge-group">
+                <div className="record-badge-group record-badge-group-compact">
                   {item.badges.map((badge) => (
-                    <div key={badge} className="record-badge">
-                      {badge}
+                    <div
+                      key={typeof badge === 'string' ? badge : badge.id}
+                      className={`record-badge${typeof badge === 'string' ? '' : ' record-badge-compact'}`}
+                      data-testid={typeof badge === 'string' ? undefined : `scene1-habit-badge-${badge.id}`}
+                    >
+                      {typeof badge === 'string' ? (
+                        badge
+                      ) : (
+                        <img
+                          src={badge.imageSrc}
+                          alt=""
+                          aria-hidden="true"
+                          className="record-badge-image"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -401,24 +481,239 @@ function PerimenopauseRecordList({
   periodConfirmed: boolean;
   onConfirmPeriodStart: () => void;
 }) {
+  const [moodExpanded, setMoodExpanded] = useState(false);
+  const [selectedMoodId, setSelectedMoodId] = useState<Scene1MoodOptionId | null>(null);
   const [symptomExpanded, setSymptomExpanded] = useState(true);
   const [selectedSymptoms, setSelectedSymptoms] = useState<PerimenopauseSymptomItemId[]>([]);
   const [tipModalOpen, setTipModalOpen] = useState(false);
+  const [pendingDropItems, setPendingDropItems] = useState<PreparedPerimenopauseDropItem[] | null>(null);
+  const [queuedDropItems, setQueuedDropItems] = useState<PerimenopauseDropAnimation[]>([]);
+  const [activeDropAnimation, setActiveDropAnimation] = useState<PerimenopauseDropAnimation | null>(null);
+  const [dropSlotItems, setDropSlotItems] = useState<Array<PerimenopauseDropSlotItem | null>>(
+    createEmptyPerimenopauseDropSlots
+  );
+  const symptomButtonRefs = useRef(new Map<PerimenopauseSymptomItemId, HTMLButtonElement | null>());
+  const dropSlotRefs = useRef<Array<HTMLSpanElement | null>>([]);
 
   function toggleSymptom(id: PerimenopauseSymptomItemId) {
-    setSelectedSymptoms((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+    setSelectedSymptoms((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((item) => item !== id);
+      }
+
+      return [...prev, id];
+    });
   }
 
   function closeTipModal() {
     setTipModalOpen(false);
+    setQueuedDropItems([]);
+    setActiveDropAnimation(null);
+    setDropSlotItems(createEmptyPerimenopauseDropSlots());
+
+    const dropCandidates = selectedSymptoms
+      .slice(-PERIMENOPAUSE_MAX_DROP_SLOTS)
+      .map((id) => {
+        const symptomItem = findPerimenopauseSymptomItem(id);
+        const startRect = snapshotElementRect(symptomButtonRefs.current.get(id) ?? null);
+
+        if (!symptomItem || !startRect) {
+          return null;
+        }
+
+        return {
+          id,
+          src: resolvePerimenopauseSymptomIcon(symptomItem),
+          startRect,
+        };
+      })
+      .filter((item): item is PreparedPerimenopauseDropItem => item !== null);
+
+    setPendingDropItems(dropCandidates.length > 0 ? dropCandidates : null);
+
     setSymptomExpanded(false);
   }
+
+  useLayoutEffect(() => {
+    if (symptomExpanded || !pendingDropItems) {
+      return;
+    }
+
+    const measuredDropItems = pendingDropItems
+      .map((item, index) => {
+        const slotIndex = PERIMENOPAUSE_MAX_DROP_SLOTS - 1 - index;
+        const endRect = snapshotElementRect(dropSlotRefs.current[slotIndex] ?? null);
+
+        if (!endRect) {
+          return null;
+        }
+
+        return {
+          ...item,
+          slotIndex,
+          endRect,
+        };
+      })
+      .filter((item): item is PerimenopauseDropAnimation => item !== null);
+
+    if (measuredDropItems.length === 0) {
+      setPendingDropItems(null);
+      return;
+    }
+
+    const [firstAnimation, ...remainingAnimations] = measuredDropItems;
+
+    setActiveDropAnimation(firstAnimation);
+    setQueuedDropItems(remainingAnimations);
+    setPendingDropItems(null);
+  }, [pendingDropItems, symptomExpanded]);
+
+  useEffect(() => {
+    if (!activeDropAnimation) {
+      return undefined;
+    }
+
+    const completeTimer = window.setTimeout(() => {
+      setDropSlotItems((prev) => {
+        const next = [...prev];
+        next[activeDropAnimation.slotIndex] = {
+          id: activeDropAnimation.id,
+          src: activeDropAnimation.src,
+        };
+        return next;
+      });
+      setQueuedDropItems((prevQueue) => {
+        if (prevQueue.length === 0) {
+          setActiveDropAnimation(null);
+          return prevQueue;
+        }
+
+        const [nextAnimation, ...remainingQueue] = prevQueue;
+        setActiveDropAnimation(nextAnimation);
+        return remainingQueue;
+      });
+    }, PERIMENOPAUSE_DROP_STEP_MS);
+
+    return () => window.clearTimeout(completeTimer);
+  }, [activeDropAnimation]);
+
+  const hasFilledDropSlots = dropSlotItems.some(Boolean);
+
+  useEffect(() => {
+    if (pendingDropItems || queuedDropItems.length > 0 || activeDropAnimation || !hasFilledDropSlots) {
+      return undefined;
+    }
+
+    const clearTimer = window.setTimeout(() => {
+      setDropSlotItems(createEmptyPerimenopauseDropSlots());
+    }, PERIMENOPAUSE_DROP_SETTLE_MS);
+
+    return () => window.clearTimeout(clearTimer);
+  }, [activeDropAnimation, hasFilledDropSlots, pendingDropItems, queuedDropItems]);
+
+  const showDropTargets =
+    !symptomExpanded &&
+    !!(pendingDropItems || queuedDropItems.length > 0 || activeDropAnimation || hasFilledDropSlots);
+  const dropAnimationStyle = activeDropAnimation
+    ? ({
+        left: `${activeDropAnimation.startRect.left + activeDropAnimation.startRect.width / 2}px`,
+        top: `${activeDropAnimation.startRect.top + activeDropAnimation.startRect.height / 2}px`,
+        ['--scene1-perimenopause-drop-dx' as const]: `${activeDropAnimation.endRect.left + activeDropAnimation.endRect.width / 2 - (activeDropAnimation.startRect.left + activeDropAnimation.startRect.width / 2)}px`,
+        ['--scene1-perimenopause-drop-dy' as const]: `${activeDropAnimation.endRect.top + activeDropAnimation.endRect.height / 2 - (activeDropAnimation.startRect.top + activeDropAnimation.startRect.height / 2)}px`,
+      } as CSSProperties)
+    : undefined;
 
   return (
     <div className="record-list record-list-perimenopause" data-testid="scene1-record-list">
       {quickRecordItems.map((item) => {
+        if (item.id === 'mood') {
+          return (
+            <RecordRow
+              key={item.id}
+              item={item}
+              periodConfirmed={periodConfirmed}
+              onConfirmPeriodStart={onConfirmPeriodStart}
+              expanded={moodExpanded}
+              rightSlot={
+                <div className="scene1-mood-row-controls">
+                  <div
+                    className="scene1-mood-preview-list scene1-mood-preview-list-compact"
+                    data-testid="scene1-mood-preview-list"
+                  >
+                    {scene1MoodPreviewItems.map((mood) => (
+                      <span
+                        key={mood.id}
+                        className="scene1-mood-preview scene1-mood-preview-image-only"
+                        data-testid={`scene1-mood-preview-${mood.id}`}
+                        aria-label={mood.label}
+                      >
+                        <img
+                          src={mood.imageSrc}
+                          alt=""
+                          aria-hidden="true"
+                          className="scene1-mood-preview-image"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </span>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className="scene1-mood-toggle-btn"
+                    aria-label={moodExpanded ? '收起心情' : '展开心情'}
+                    aria-expanded={moodExpanded}
+                    onClick={() => setMoodExpanded((prev) => !prev)}
+                  >
+                    <span className="record-plus" aria-hidden="true">
+                      +
+                    </span>
+                  </button>
+                </div>
+              }
+            >
+              {moodExpanded ? (
+                <div className="scene1-mood-panel" data-testid="scene1-mood-panel">
+                  {scene1MoodGroups.map((group) => (
+                    <section key={group.id} className="scene1-mood-group">
+                      <h3 className="scene1-mood-group-title">{group.title}</h3>
+                      <div className="scene1-mood-grid">
+                        {group.options.map((option) => {
+                          const isSelected = selectedMoodId === option.id;
+
+                          return (
+                            <button
+                              key={option.id}
+                              type="button"
+                              className={`scene1-mood-option${isSelected ? ' scene1-mood-option-selected' : ''}`}
+                              data-testid={`scene1-mood-option-${option.id}`}
+                              aria-label={option.label}
+                              aria-pressed={isSelected}
+                              onClick={() => setSelectedMoodId(option.id)}
+                            >
+                              <span className="scene1-mood-option-icon-slot">
+                                <img
+                                  src={option.imageSrc}
+                                  alt=""
+                                  aria-hidden="true"
+                                  className="scene1-mood-option-image"
+                                  loading="lazy"
+                                  decoding="async"
+                                />
+                              </span>
+                              <span className="scene1-mood-option-label">{option.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              ) : null}
+            </RecordRow>
+          );
+        }
+
         if (item.id === 'symptom') {
           return (
             <RecordRow
@@ -438,16 +733,51 @@ function PerimenopauseRecordList({
                     {"\u5df2\u5c55\u5f00"}
                   </button>
                 ) : (
-                  <button
-                    type="button"
-                    className="scene1-perimenopause-toggle-btn"
-                    aria-label={"\u5c55\u5f00\u75c7\u72b6"}
-                    onClick={() => setSymptomExpanded(true)}
-                  >
-                    <span className="record-plus" aria-hidden="true">
-                      +
-                    </span>
-                  </button>
+                  <div className="scene1-perimenopause-collapsed-controls">
+                    {showDropTargets ? (
+                      <div className="scene1-perimenopause-drop-targets" data-testid="scene1-perimenopause-drop-targets">
+                        {dropSlotItems.map((slotItem, index) => (
+                          <span
+                            key={`drop-slot-${index}`}
+                            ref={(node) => {
+                              dropSlotRefs.current[index] = node;
+                            }}
+                            className={`scene1-perimenopause-drop-target${slotItem ? ' scene1-perimenopause-drop-target-filled' : ''}`}
+                            data-testid={`scene1-perimenopause-drop-target-${index}`}
+                            data-drop-id={slotItem?.id ?? ''}
+                            aria-hidden="true"
+                          >
+                            {slotItem ? (
+                              <img
+                                src={slotItem.src}
+                                alt=""
+                                aria-hidden="true"
+                                className="scene1-perimenopause-drop-target-icon"
+                                loading="lazy"
+                                decoding="async"
+                              />
+                            ) : null}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="scene1-perimenopause-toggle-btn"
+                      aria-label={"\u5c55\u5f00\u75c7\u72b6"}
+                      onClick={() => {
+                        setPendingDropItems(null);
+                        setQueuedDropItems([]);
+                        setActiveDropAnimation(null);
+                        setDropSlotItems(createEmptyPerimenopauseDropSlots());
+                        setSymptomExpanded(true);
+                      }}
+                    >
+                      <span className="record-plus" aria-hidden="true">
+                        +
+                      </span>
+                    </button>
+                  </div>
                 )
               }
             >
@@ -474,6 +804,9 @@ function PerimenopauseRecordList({
                               data-testid="scene1-perimenopause-kmi-item"
                             >
                               <button
+                                ref={(node) => {
+                                  symptomButtonRefs.current.set(item.id, node);
+                                }}
                                 type="button"
                                 data-testid={`scene1-perimenopause-kmi-toggle-${item.id}`}
                                 aria-pressed={isSelected}
@@ -531,6 +864,28 @@ function PerimenopauseRecordList({
                 </div>
               ) : null}
               <PerimenopauseTipModal open={tipModalOpen} onClose={closeTipModal} />
+              {activeDropAnimation ? (
+                <div
+                  className="scene1-perimenopause-drop-layer"
+                  data-testid="scene1-perimenopause-drop-layer"
+                  aria-hidden="true"
+                >
+                  <span
+                    className="scene1-perimenopause-drop-animation"
+                    data-testid="scene1-perimenopause-drop-animation"
+                    style={dropAnimationStyle}
+                  >
+                    <img
+                      src={activeDropAnimation.src}
+                      alt=""
+                      aria-hidden="true"
+                      className="scene1-perimenopause-drop-animation-icon"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </span>
+                </div>
+              ) : null}
             </RecordRow>
           );
         }

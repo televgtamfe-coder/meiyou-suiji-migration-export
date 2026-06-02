@@ -175,6 +175,171 @@ describe('scene1 ui', () => {
     }
   });
 
+  it('drops the last four selected symptoms into separate slots from the plus button toward the left', () => {
+    vi.useFakeTimers();
+
+    try {
+      render(
+        <MemoryRouter initialEntries={['/scene1-perimenopause']}>
+          <AppRouter />
+        </MemoryRouter>,
+      );
+
+      act(() => {
+        screen.getByTestId('scene1-perimenopause-kmi-toggle-kmiHotFlashes').click();
+        screen.getByTestId('scene1-perimenopause-kmi-toggle-symptom-sweating').click();
+        screen.getByTestId('scene1-perimenopause-kmi-toggle-kmiHeadache').click();
+        screen.getByTestId('scene1-perimenopause-kmi-toggle-kmiPalpitations').click();
+        screen.getByTestId('scene1-perimenopause-kmi-toggle-symptom-joint-pain').click();
+      });
+
+      act(() => {
+        screen.getByRole('button', { name: '确定' }).click();
+      });
+
+      expect(screen.getByTestId('scene1-perimenopause-tip-modal')).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(2000);
+      });
+
+      expect(screen.queryByTestId('scene1-perimenopause-tip-modal')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('scene1-perimenopause-symptom-panel')).not.toBeInTheDocument();
+      expect(screen.getByTestId('scene1-perimenopause-drop-target-0')).toBeInTheDocument();
+      expect(screen.getByTestId('scene1-perimenopause-drop-target-1')).toBeInTheDocument();
+      expect(screen.getByTestId('scene1-perimenopause-drop-target-2')).toBeInTheDocument();
+      expect(screen.getByTestId('scene1-perimenopause-drop-target-3')).toBeInTheDocument();
+      expect(screen.getByTestId('scene1-perimenopause-drop-animation')).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      expect(screen.getByTestId('scene1-perimenopause-drop-target-3')).toHaveAttribute(
+        'data-drop-id',
+        'symptom-sweating',
+      );
+
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      expect(screen.getByTestId('scene1-perimenopause-drop-target-2')).toHaveAttribute(
+        'data-drop-id',
+        'kmiHeadache',
+      );
+
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      expect(screen.getByTestId('scene1-perimenopause-drop-target-1')).toHaveAttribute(
+        'data-drop-id',
+        'kmiPalpitations',
+      );
+
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      expect(screen.getByTestId('scene1-perimenopause-drop-target-0')).toHaveAttribute(
+        'data-drop-id',
+        'symptom-joint-pain',
+      );
+      expect(screen.queryByTestId('scene1-perimenopause-drop-animation')).not.toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+
+      expect(screen.queryByTestId('scene1-perimenopause-drop-target-0')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('scene1-perimenopause-drop-target-3')).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('renders five mood preview icons and expands grouped mood options inline', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/scene1-perimenopause']}>
+        <AppRouter />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId('scene1-mood-preview-super-happy')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-mood-preview-pretty-happy')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-mood-preview-calm')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-mood-preview-unhappy')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-mood-preview-anxious')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '展开心情' }));
+
+    expect(screen.getByTestId('scene1-mood-panel')).toBeInTheDocument();
+    expect(screen.getByText('积极心情')).toBeInTheDocument();
+    expect(screen.getByText('中性心情')).toBeInTheDocument();
+    expect(screen.getByText('消极心情')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '超开心' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '平静' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '焦虑' })).toBeInTheDocument();
+  });
+
+  it('selects one mood option at a time in the inline mood panel', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/scene1-perimenopause']}>
+        <AppRouter />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: '展开心情' }));
+
+    const calm = screen.getByRole('button', { name: '平静' });
+    const anxious = screen.getByRole('button', { name: '焦虑' });
+
+    await user.click(calm);
+    expect(calm).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(anxious);
+    expect(anxious).toHaveAttribute('aria-pressed', 'true');
+    expect(calm).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('renders image badges for the habit row', () => {
+    render(
+      <MemoryRouter initialEntries={['/scene1-perimenopause']}>
+        <AppRouter />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId('scene1-habit-badge-apple')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-habit-badge-mug')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-habit-badge-tennis')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-habit-badge-poop')).toBeInTheDocument();
+  });
+
+  it('renders image-only mood previews and compact habit badges', () => {
+    render(
+      <MemoryRouter initialEntries={['/scene1-perimenopause']}>
+        <AppRouter />
+      </MemoryRouter>,
+    );
+
+    const moodPreview = screen.getByTestId('scene1-mood-preview-super-happy');
+    const moodPreviewList = screen.getByTestId('scene1-mood-preview-list');
+    const moodPreviewImage = moodPreview.querySelector('img');
+    const habitBadge = screen.getByTestId('scene1-habit-badge-apple');
+    const habitBadgeImage = habitBadge.querySelector('img');
+
+    expect(moodPreviewImage).not.toBeNull();
+    expect(habitBadgeImage).not.toBeNull();
+    expect(moodPreview).toHaveClass('scene1-mood-preview-image-only');
+    expect(moodPreviewList).toHaveClass('scene1-mood-preview-list-compact');
+    expect(habitBadge).toHaveClass('record-badge-compact');
+  });
+
   it('renders the parenting page route shell', () => {
     render(
       <MemoryRouter initialEntries={['/scene1-parenting']}>
