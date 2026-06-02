@@ -16,6 +16,7 @@ const emptyAnswers: AssessmentAnswers = {
   weightKg: '',
   periodPresence: '',
   cycleChange: '',
+  cycleAbsentDuration: '',
   volumeChange: '',
   lastPeriodDate: '',
   lastPeriodQuickOption: '',
@@ -92,19 +93,35 @@ export function answerAssessmentField(
   field: AssessmentFieldKey,
   value: string
 ): Scene1AssessmentState {
+  const nextAnswers = {
+    ...state.answers,
+    [field]: value,
+  };
+
+  if (field === 'cycleChange' && value !== 'absent') {
+    nextAnswers.cycleAbsentDuration = '';
+  }
+
   return {
     ...state,
-    answers: {
-      ...state.answers,
-      [field]: value,
-    },
+    answers: nextAnswers,
   };
 }
 
 export function isAssessmentStepComplete(state: Scene1AssessmentState): boolean {
   const step = getAssessmentStep(state.currentStep);
 
-  return step.requiredFields.every((field) => state.answers[field].trim().length > 0);
+  const baseComplete = step.requiredFields.every((field) => state.answers[field].trim().length > 0);
+
+  if (!baseComplete) {
+    return false;
+  }
+
+  if (state.currentStep === 3 && state.answers.cycleChange === 'absent') {
+    return state.answers.cycleAbsentDuration.trim().length > 0;
+  }
+
+  return true;
 }
 
 export function goToNextAssessmentStep(state: Scene1AssessmentState): Scene1AssessmentState {

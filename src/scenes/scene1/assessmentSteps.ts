@@ -8,6 +8,7 @@ export type AssessmentFieldKey =
   | 'weightKg'
   | 'periodPresence'
   | 'cycleChange'
+  | 'cycleAbsentDuration'
   | 'volumeChange'
   | 'lastPeriodDate'
   | 'lastPeriodQuickOption'
@@ -71,10 +72,16 @@ export const assessmentSteps: AssessmentStepDefinition[] = [
         { value: 'no', label: '已经停止了一段时间' },
       ],
       cycleChange: [
-        { value: 'same', label: '基本无变化，周期稳定' },
-        { value: 'shorter', label: '周期缩短（比平时少7天以上）' },
-        { value: 'longer', label: '周期延长（两个月才来一次，或间隔超过40天）' },
-        { value: 'unsure', label: '说不清，不确定' },
+        { value: 'same', label: '每月基本都来，周期规律（21-35天）' },
+        { value: 'shorter', label: '每月基本都来，但周期有时提前或推后超过7天' },
+        { value: 'longer', label: '经常2-3个月才来一次，量可能变少' },
+        { value: 'absent', label: '已经很久没来了（请选择具体时长）' },
+        { value: 'unsure', label: '完全不确定 / 没关注过' },
+      ],
+      cycleAbsentDuration: [
+        { value: '3-6-months', label: '3-6个月没来' },
+        { value: '7-11-months', label: '7-11个月没来' },
+        { value: '12-plus-months', label: '1年以上没来' },
       ],
       volumeChange: [
         { value: 'heavier', label: '明显增多' },

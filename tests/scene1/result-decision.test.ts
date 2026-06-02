@@ -10,6 +10,7 @@ function createAnswers(overrides: Partial<AssessmentAnswers> = {}): AssessmentAn
     weightKg: '58',
     periodPresence: 'yes',
     cycleChange: 'same',
+    cycleAbsentDuration: '',
     volumeChange: 'same',
     lastPeriodDate: '',
     lastPeriodQuickOption: 'forgot',

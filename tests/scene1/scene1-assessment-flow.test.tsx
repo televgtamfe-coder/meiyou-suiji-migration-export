@@ -74,9 +74,14 @@ describe('scene1 assessment flow', () => {
     expect(screen.getByText('（记录数据读取，无记录数据填写）')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '下一步' })).toBeDisabled();
     await user.click(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' }));
-    await user.click(screen.getByRole('button', { name: '周期缩短（比平时少7天以上）' }));
+    await user.click(screen.getByRole('button', { name: '已经很久没来了（请选择具体时长）' }));
+    expect(screen.getByRole('button', { name: '3-6个月没来' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '7-11个月没来' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '1年以上没来' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '明显减少' }));
     await user.click(screen.getByRole('button', { name: '记不清了' }));
+    expect(screen.getByRole('button', { name: '下一步' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: '3-6个月没来' }));
     await user.click(screen.getByRole('button', { name: '上一步' }));
 
     expect(screen.getByText('42岁')).toBeInTheDocument();
@@ -85,7 +90,8 @@ describe('scene1 assessment flow', () => {
 
     await user.click(screen.getByRole('button', { name: '下一步' }));
     expect(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' })).toHaveClass('active');
-    expect(screen.getByRole('button', { name: '周期缩短（比平时少7天以上）' })).toHaveClass('active');
+    expect(screen.getByRole('button', { name: '已经很久没来了（请选择具体时长）' })).toHaveClass('active');
+    expect(screen.getByRole('button', { name: '3-6个月没来' })).toHaveClass('active');
     expect(screen.getByRole('button', { name: '明显减少' })).toHaveClass('active');
     expect(screen.getByRole('button', { name: '记不清了' })).toHaveClass('active');
   }, 15000);
@@ -143,7 +149,7 @@ describe('scene1 assessment flow', () => {
     expect(screen.queryByPlaceholderText('YYYY-MM-DD')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' }));
-    await user.click(screen.getByRole('button', { name: '基本无变化，周期稳定' }));
+    await user.click(screen.getByRole('button', { name: '每月基本都来，周期规律（21-35天）' }));
     await user.click(screen.getByRole('button', { name: '无明显变化' }));
     await user.selectOptions(screen.getByRole('combobox', { name: '最近月经年份' }), '2026');
     await user.selectOptions(screen.getByRole('combobox', { name: '最近月经月份' }), '03');
@@ -234,7 +240,7 @@ describe('scene1 assessment flow', () => {
     await fillProfileStep(user);
     await user.click(screen.getByRole('button', { name: '下一步' }));
     await user.click(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' }));
-    await user.click(screen.getByRole('button', { name: '周期缩短（比平时少7天以上）' }));
+    await user.click(screen.getByRole('button', { name: '每月基本都来，但周期有时提前或推后超过7天' }));
     await user.click(screen.getByRole('button', { name: '明显减少' }));
     await user.click(screen.getByRole('button', { name: '记不清了' }));
     await user.click(screen.getByRole('button', { name: '下一步' }));
@@ -323,7 +329,7 @@ describe('scene1 assessment flow', () => {
     await fillProfileStep(user);
     await user.click(screen.getByRole('button', { name: '下一步' }));
     await user.click(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' }));
-    await user.click(screen.getByRole('button', { name: '周期缩短（比平时少7天以上）' }));
+    await user.click(screen.getByRole('button', { name: '每月基本都来，但周期有时提前或推后超过7天' }));
     await user.click(screen.getByRole('button', { name: '明显减少' }));
     await user.click(screen.getByRole('button', { name: '记不清了' }));
     await user.click(screen.getByRole('button', { name: '下一步' }));
@@ -375,7 +381,7 @@ describe('scene1 assessment flow', () => {
     expect(screen.getByText('（记录数据读取，无记录数据填写）')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' }));
-    await user.click(screen.getByRole('button', { name: '周期缩短（比平时少7天以上）' }));
+    await user.click(screen.getByRole('button', { name: '每月基本都来，但周期有时提前或推后超过7天' }));
     await user.click(screen.getByRole('button', { name: '明显减少' }));
     await user.click(screen.getByRole('button', { name: '记不清了' }));
     await user.click(screen.getByRole('button', { name: '下一步' }));
@@ -430,7 +436,7 @@ describe('scene1 assessment flow', () => {
     await fillProfileStep(user);
     await user.click(screen.getByRole('button', { name: '下一步' }));
     await user.click(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' }));
-    await user.click(screen.getByRole('button', { name: '周期缩短（比平时少7天以上）' }));
+    await user.click(screen.getByRole('button', { name: '每月基本都来，但周期有时提前或推后超过7天' }));
     await user.click(screen.getByRole('button', { name: '明显减少' }));
     await user.click(screen.getByRole('button', { name: '记不清了' }));
     await user.click(screen.getByRole('button', { name: '下一步' }));

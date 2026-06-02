@@ -18,6 +18,17 @@ type ChoiceRowProps = {
   description?: string;
 };
 
+type CycleChangeFieldProps = {
+  label: string;
+  value: string;
+  absenceDurationValue: string;
+  options: AssessmentOption[];
+  absenceDurationOptions: AssessmentOption[];
+  onSelect: (value: string) => void;
+  onSelectAbsenceDuration: (value: string) => void;
+  description?: string;
+};
+
 type TextFieldProps = {
   field: AssessmentFieldKey;
   label: string;
@@ -258,6 +269,12 @@ function getDaysSinceDate(value: string, now = new Date()) {
 }
 
 function formatLastPeriodValue(answers: Scene1AssessmentState['answers'], gapDays: number | null) {
+  const absenceDurationLabel = getCycleAbsenceDurationLabel(answers.cycleAbsentDuration);
+
+  if (answers.cycleChange === 'absent' && absenceDurationLabel) {
+    return `已${absenceDurationLabel}未行经`;
+  }
+
   if (answers.lastPeriodQuickOption === 'current-period') {
     return '目前正处于经期';
   }
@@ -282,7 +299,60 @@ function formatLastPeriodValue(answers: Scene1AssessmentState['answers'], gapDay
   return '未填写';
 }
 
+function getCycleAbsenceDurationLabel(value: string) {
+  if (value === '3-6-months') {
+    return '3-6个月';
+  }
+
+  if (value === '7-11-months') {
+    return '7-11个月';
+  }
+
+  if (value === '12-plus-months') {
+    return '1年以上';
+  }
+
+  return '';
+}
+
+function getCycleAbsenceDurationDays(value: string) {
+  if (value === '3-6-months') {
+    return 120;
+  }
+
+  if (value === '7-11-months') {
+    return 270;
+  }
+
+  if (value === '12-plus-months') {
+    return 365;
+  }
+
+  return null;
+}
+
 function getCycleChangeValue(answers: Scene1AssessmentState['answers']) {
+  if (answers.cycleChange === 'same') {
+    return '每月基本都来，周期规律（21-35天）';
+  }
+
+  if (answers.cycleChange === 'shorter') {
+    return '每月基本都来，但周期有时提前或推后超过 7 天';
+  }
+
+  if (answers.cycleChange === 'longer') {
+    return '经常 2-3 个月才来一次，量可能变少';
+  }
+
+  if (answers.cycleChange === 'absent') {
+    const durationLabel = getCycleAbsenceDurationLabel(answers.cycleAbsentDuration);
+    return durationLabel ? `已经${durationLabel}没来月经` : '已经很久没来月经';
+  }
+
+  if (answers.cycleChange === 'unsure') {
+    return '完全不确定 / 没关注过';
+  }
+
   if (answers.cycleChange === 'shorter') {
     return '周期较以前提前，波动超过 7 天';
   }
@@ -298,14 +368,19 @@ function getCycleChangeValue(answers: Scene1AssessmentState['answers']) {
   return '周期变化暂不明确';
 }
 
-function getStageSummary(
+export function getStageSummary(
   answers: Scene1AssessmentState['answers'],
   kmiTotal: number,
   now = new Date()
 ): ResultStageSummary {
   const age = getAssessmentAge(answers.age);
   const lastPeriodGapDays = getDaysSinceDate(answers.lastPeriodDate, now);
-  const lastPeriodValue = formatLastPeriodValue(answers, lastPeriodGapDays);
+  const reportedGapDays = getCycleAbsenceDurationDays(answers.cycleAbsentDuration);
+  const effectiveLastPeriodGapDays =
+    lastPeriodGapDays !== null && reportedGapDays !== null
+      ? Math.max(lastPeriodGapDays, reportedGapDays)
+      : (reportedGapDays ?? lastPeriodGapDays);
+  const lastPeriodValue = formatLastPeriodValue(answers, effectiveLastPeriodGapDays);
   const cycleChangeValue = getCycleChangeValue(answers);
   const evidences: ResultStageEvidence[] = [
     {
@@ -324,109 +399,200 @@ function getStageSummary(
       detail: '提前或推后超过 7 天，优先提示过渡早期。',
     },
   ];
+  const buildSummary = (title: string, summary: string, tone: ResultBadgeTone): ResultStageSummary => ({
+    title,
+    summary,
+    tone,
+    evidences,
+  });
 
-  if (age !== null && lastPeriodGapDays !== null && lastPeriodGapDays >= 365) {
-    if (age >= 48) {
-      return {
-        title: '绝经期',
-        summary: '年龄与末次月经间隔已达到文档中的绝经判定区间，更符合绝经期管理路径。',
-        tone: 'orange',
-        evidences,
-      };
+  if (answers.cycleChange === 'absent') {
+    if (answers.cycleAbsentDuration === '12-plus-months') {
+      if (age !== null && age >= 45) {
+        return buildSummary(
+          '绝经期',
+          '您自报已经很久没来了（≥1年），且年龄≥45岁，当前更符合绝经期。',
+          'orange'
+        );
+      }
+
+      if (age !== null && age >= 40) {
+        return buildSummary(
+          '绝经期 / 早发性绝经',
+          '您自报已经很久没来了（≥1年），但年龄仍在 40-44 岁，当前需按绝经期 / 早发性绝经方向优先判断，并建议尽快就医确认。',
+          'orange'
+        );
+      }
+
+      return buildSummary(
+        'S1（卵巢早衰排查）',
+        '您自报已经很久没来了（≥1年），且年龄<40岁，建议按卵巢早衰方向优先排查，并尽快就医。',
+        'orange'
+      );
     }
 
-    if (age < 45) {
-      return {
-        title: '早发性绝经风险待排查',
-        summary: '末次月经已超过 12 个月，但年龄未达到常见绝经阶段，需优先排查卵巢功能异常。',
-        tone: 'orange',
-        evidences,
-      };
+    if (answers.cycleAbsentDuration === '3-6-months' || answers.cycleAbsentDuration === '7-11-months') {
+      if (age !== null && age >= 45) {
+        return buildSummary(
+          '围绝经期过渡晚期',
+          '您自报已经 3-11 个月没来月经，且年龄≥45岁，当前更符合围绝经期过渡晚期。',
+          'orange'
+        );
+      }
+
+      return buildSummary(
+        '异常闭经',
+        '您自报已经 3-11 个月没来月经，但年龄<45岁，建议就医；在明确原因前，临时按进入围绝经期管理。',
+        'orange'
+      );
     }
   }
 
-  if (age !== null && lastPeriodGapDays !== null && lastPeriodGapDays >= 90) {
-    if (age >= 45) {
-      return {
-        title: '围绝经期过渡晚期',
-        summary: '末次月经距今已进入 3-11 个月区间，且年龄处于文档定义的高相关阶段，更符合围绝经期过渡晚期。',
-        tone: 'orange',
-        evidences,
-      };
+  if (answers.cycleChange === 'longer') {
+    if (age !== null && age >= 40 && age <= 48) {
+      return buildSummary(
+        '围绝经期过渡晚期',
+        '您自报经常 2-3 个月才来一次月经，且年龄处于 40-48 岁，当前更符合围绝经期过渡晚期（月经稀发）。',
+        'orange'
+      );
     }
 
-    return {
-      title: '异常闭经待排查',
-      summary: '末次月经间隔已明显拉长，但年龄尚轻，建议按异常闭经优先排查，同时继续按围绝经期路径观察。',
-      tone: 'orange',
-      evidences,
-    };
+    if (age !== null && age < 40) {
+      return buildSummary(
+        '异常月经稀发',
+        '您自报经常 2-3 个月才来一次月经，但年龄<40岁，建议就医排查异常月经稀发原因。',
+        'orange'
+      );
+    }
   }
 
-  if (age !== null && lastPeriodGapDays !== null && lastPeriodGapDays >= 60 && age >= 40 && age <= 48) {
-    return {
-      title: '围绝经期过渡晚期',
-      summary: '末次月经间隔已接近 2-3 个月一次，符合文档中围绝经期过渡晚期的高相关信号。',
-      tone: 'orange',
-      evidences,
-    };
-  }
-
-  if (age !== null && (answers.cycleChange === 'shorter' || answers.cycleChange === 'longer')) {
-    if (age >= 40 && age <= 48) {
-      return {
-        title: '围绝经期过渡早期',
-        summary: '当前更符合“40-48 岁 + 周期波动超过 7 天”的文档规则，提示已进入围绝经期过渡早期。',
-        tone: 'pink',
-        evidences,
-      };
+  if (answers.cycleChange === 'shorter') {
+    if (age !== null && age >= 40 && age <= 48) {
+      return buildSummary(
+        '围绝经期过渡早期',
+        '您自报周期有时提前或推后超过7天，且年龄处于 40-48 岁，当前更符合围绝经期过渡早期。',
+        'pink'
+      );
     }
 
-    if (age < 40) {
-      return {
-        title: '周期变化待观察',
-        summary: '虽然存在周期波动，但年龄尚未进入文档中的高相关区间，建议持续观察记录完整性。',
-        tone: 'green',
-        evidences,
-      };
+    if (age !== null && age < 40) {
+      return buildSummary(
+        '未进入围绝经期',
+        '虽然存在周期变化，但年龄<40岁，当前更像单纯周期波动，建议持续观察并继续记录。',
+        'green'
+      );
     }
   }
 
   if (answers.cycleChange === 'same') {
     if (age !== null && age < 45 && kmiTotal <= 6) {
-      return {
-        title: '未进入围绝经期',
-        summary: '周期仍规律，年龄与症状分值也未达到文档中的围绝经期触发条件，更偏向未进入围绝经期。',
-        tone: 'green',
-        evidences,
-      };
+      return buildSummary(
+        '未进入围绝经期',
+        '您自报周期规律（21-35天），且 KMI≤6，当前更偏向未进入围绝经期。',
+        'green'
+      );
     }
 
-    if (age !== null && age >= 45 && kmiTotal <= 6) {
-      return {
-        title: '未进入围绝经期（高风险关注）',
-        summary: '虽然目前周期仍规律、症状较轻，但年龄已进入高相关阶段，建议密切关注后续周期变化。',
-        tone: 'pink',
-        evidences,
-      };
+    if (age !== null && age >= 45 && kmiTotal >= 7) {
+      return buildSummary(
+        '进入围绝经期（待确认）',
+        '您自报周期规律，但症状评分提示可能存在围绝经期症状，当前临时按进入围绝经期管理，并标记为待确认。',
+        kmiTotal >= 16 ? 'orange' : 'pink'
+      );
+    }
+
+    if (kmiTotal > 30) {
+      return buildSummary(
+        '进入围绝经期（症状严重）',
+        '虽然您自报周期规律，但 KMI 提示症状较重，当前按进入围绝经期管理，并建议尽快就医确认。',
+        'orange'
+      );
+    }
+
+    if (kmiTotal >= 16) {
+      return buildSummary(
+        '进入围绝经期（症状明显）',
+        '虽然您自报周期规律，但 KMI 提示症状已经较明显，当前按进入围绝经期管理，并建议继续记录趋势。',
+        'orange'
+      );
     }
 
     if (kmiTotal >= 7) {
-      return {
-        title: '症状与周期不一致，阶段待确认',
-        summary: '症状评分已提示围绝经期表现，但周期信息仍相对平稳，建议继续记录或结合门诊进一步确认。',
-        tone: 'pink',
-        evidences,
-      };
+      return buildSummary(
+        '进入围绝经期',
+        '虽然您自报周期规律，但 KMI 已提示围绝经期相关症状，当前按进入围绝经期管理。',
+        'pink'
+      );
+    }
+
+    if (age !== null && age >= 45) {
+      return buildSummary(
+        '未进入围绝经期（建议持续观察）',
+        '您自报周期规律，且当前 KMI 较低；虽然年龄已≥45岁，但现阶段仍先按未进入围绝经期处理，建议持续观察。',
+        'green'
+      );
     }
   }
 
-  return {
-    title: '阶段待继续观察',
-    summary: '现有年龄、末次月经与周期变化信息还不足以落到更明确的阶段结论，建议继续补充和连续记录。',
-    tone: 'pink',
-    evidences,
-  };
+  if (answers.cycleChange === 'unsure') {
+    const note = '建议关注月经周期，记录3个月后可获得精准评估。';
+
+    if (kmiTotal <= 6) {
+      return buildSummary(
+        '未进入围绝经期',
+        `您暂时无法确定月经情况，当前先以 KMI 为主要依据保守判断为未进入围绝经期。${note}`,
+        'green'
+      );
+    }
+
+    if (kmiTotal <= 15) {
+      return buildSummary(
+        '进入围绝经期',
+        `您暂时无法确定月经情况，当前以 KMI 为主要依据，提示已进入围绝经期。${note}`,
+        'pink'
+      );
+    }
+
+    if (kmiTotal <= 30) {
+      return buildSummary(
+        '进入围绝经期（症状明显）',
+        `您暂时无法确定月经情况，当前以 KMI 为主要依据，提示围绝经期症状已经较明显。${note}`,
+        'orange'
+      );
+    }
+
+    return buildSummary(
+      '进入围绝经期（症状严重）',
+      `您暂时无法确定月经情况，当前以 KMI 为主要依据，提示围绝经期症状较重。${note}`,
+      'orange'
+    );
+  }
+
+  if (effectiveLastPeriodGapDays !== null && effectiveLastPeriodGapDays >= 365 && age !== null) {
+    if (age >= 45) {
+      return buildSummary('绝经期', '末次月经与当前记录也支持绝经期方向，建议结合持续记录与门诊信息综合判断。', 'orange');
+    }
+
+    if (age >= 40) {
+      return buildSummary(
+        '绝经期 / 早发性绝经',
+        '末次月经与当前记录支持绝经期 / 早发性绝经方向，建议尽快就医确认。',
+        'orange'
+      );
+    }
+
+    return buildSummary(
+      'S1（卵巢早衰排查）',
+      '末次月经与当前记录提示停经时间较长，且年龄<40岁，建议按卵巢早衰方向优先排查。',
+      'orange'
+    );
+  }
+
+  return buildSummary(
+    '阶段待继续观察',
+    '现有年龄、月经与症状信息还不足以落到更明确的阶段结论，建议继续补充并连续记录。',
+    'pink'
+  );
 }
 
 function ProfilePickerField({ label, value, placeholder, onOpen }: ProfilePickerFieldProps) {
@@ -642,6 +808,57 @@ function ChoiceRow({ label, value, options, onSelect, description }: ChoiceRowPr
   );
 }
 
+function CycleChangeField({
+  label,
+  value,
+  absenceDurationValue,
+  options,
+  absenceDurationOptions,
+  onSelect,
+  onSelectAbsenceDuration,
+  description,
+}: CycleChangeFieldProps) {
+  return (
+    <div className="scene1-assessment-block">
+      <h3 className="scene1-assessment-question">{label}</h3>
+      {description ? <p className="scene1-assessment-helper">{description}</p> : null}
+      <div className="scene1-assessment-choice-grid">
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={value === option.value ? 'scene1-assessment-choice active' : 'scene1-assessment-choice'}
+            onClick={() => onSelect(option.value)}
+          >
+            <span className="scene1-assessment-choice-label">{option.label}</span>
+          </button>
+        ))}
+      </div>
+      {value === 'absent' ? (
+        <div className="scene1-assessment-subchoice-panel">
+          <p className="scene1-assessment-helper scene1-assessment-subchoice-helper">请选择具体时长</p>
+          <div className="scene1-assessment-subchoice-grid">
+            {absenceDurationOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={
+                  absenceDurationValue === option.value
+                    ? 'scene1-assessment-choice scene1-assessment-choice-sub active'
+                    : 'scene1-assessment-choice scene1-assessment-choice-sub'
+                }
+                onClick={() => onSelectAbsenceDuration(option.value)}
+              >
+                <span className="scene1-assessment-choice-label">{option.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function DateChoiceField({
   dateField,
   quickField,
@@ -810,8 +1027,45 @@ function getRiskToneFromDecisionLabel(label: string): ResultBadgeTone {
 }
 
 function getCycleSummary(answers: Scene1AssessmentState['answers']) {
+  if (answers.cycleChange === 'same' || answers.cycleChange === 'shorter' || answers.cycleChange === 'longer' || answers.cycleChange === 'absent' || answers.cycleChange === 'unsure') {
+    const cycleText =
+      answers.cycleChange === 'same'
+        ? '最近 1 年月经总体规律，周期仍在常见范围内。'
+        : answers.cycleChange === 'shorter'
+          ? '每月基本都来，但周期有时提前或推后超过 7 天，提示节律已经出现波动。'
+          : answers.cycleChange === 'longer'
+            ? '月经已经出现 2-3 个月才来一次的情况，属于需要重点关注的周期拉长信号。'
+            : answers.cycleChange === 'absent'
+              ? `已经${getCycleAbsenceDurationLabel(answers.cycleAbsentDuration) || '较长时间'}没来月经，建议结合年龄与伴随症状综合判断。`
+              : '最近 1 年的月经情况暂不够明确，建议继续记录帮助识别趋势。';
+
+    const volumeText =
+      answers.volumeChange === 'heavier'
+        ? '经量较前增多，需要留意是否伴随疲乏或出血异常。'
+        : answers.volumeChange === 'lighter'
+          ? '经量较前减少，和围绝经期激素波动相符。'
+          : answers.volumeChange === 'same'
+            ? '经量变化目前不算突出。'
+            : '经量变化还不够清晰。';
+
+    const lastPeriodText =
+      answers.lastPeriodQuickOption === 'current-period'
+        ? '当前正处于经期。'
+        : answers.lastPeriodQuickOption === 'forgot'
+          ? '最近一次月经时间暂不明确。'
+          : answers.lastPeriodQuickOption === 'not-applicable'
+            ? '最近月经情况暂不适用。'
+            : answers.lastPeriodDate
+              ? `最近一次月经记录为 ${answers.lastPeriodDate}。`
+              : '';
+
+    return `${cycleText}${volumeText}${lastPeriodText}`;
+  }
+
   const cycleText =
-    answers.cycleChange === 'shorter'
+    answers.cycleChange === 'absent'
+      ? `已经${getCycleAbsenceDurationLabel(answers.cycleAbsentDuration) || '较长时间'}没来月经，建议结合年龄与伴随症状综合判断。`
+      : answers.cycleChange === 'shorter'
       ? '周期较以往提前，提示卵巢功能可能已经出现波动。'
       : answers.cycleChange === 'longer'
         ? '周期延长或间隔拉长，属于围绝经期常见变化信号。'
@@ -843,6 +1097,20 @@ function getCycleSummary(answers: Scene1AssessmentState['answers']) {
 }
 
 function getCycleHealthScore(answers: Scene1AssessmentState['answers']) {
+  if (answers.cycleChange === 'absent') {
+    const cycleScore =
+      answers.cycleAbsentDuration === '12-plus-months'
+        ? 28
+        : answers.cycleAbsentDuration === '7-11-months'
+          ? 34
+          : 40;
+    const volumeScore =
+      answers.volumeChange === 'same' ? 82 : answers.volumeChange === 'unsure' ? 64 : 52;
+    const periodScore = answers.periodPresence === 'yes' ? 78 : 45;
+
+    return Math.round((cycleScore + volumeScore + periodScore) / 3);
+  }
+
   const cycleScore =
     answers.cycleChange === 'same' ? 82 : answers.cycleChange === 'unsure' ? 60 : 46;
   const volumeScore =
@@ -957,10 +1225,12 @@ function CompletionState({ answers }: { answers: Scene1AssessmentState['answers'
   const radarPath = buildRadarPath(radarMetrics.map((item) => item.score));
   const cycleTag =
     answers.cycleChange === 'same'
-      ? '周期相对稳定'
+      ? '周期相对规律'
+      : answers.cycleChange === 'absent'
+        ? '停经信号需要关注'
       : answers.cycleChange === 'unsure'
-        ? '周期变化待继续观察'
-        : '周期变化明显';
+        ? '月经情况待继续观察'
+        : '月经变化较明显';
 
   return (
     <div className="scene1-assessment-result-page">
@@ -1369,12 +1639,15 @@ export function AssessmentStepRenderer({
           options={step.options?.periodPresence ?? []}
           onSelect={(value) => onAnswer('periodPresence', value)}
         />
-        <ChoiceRow
-          label="2. 最近 12 个月月经周期是否有明显变化？"
-          description="指两次月经第一天之间的间隔天数。"
+        <CycleChangeField
+          label="2. 您最近1年的月经情况？"
+          description="请结合规律、间隔和停经时长，选择最符合的一项。"
           value={state.answers.cycleChange}
+          absenceDurationValue={state.answers.cycleAbsentDuration}
           options={step.options?.cycleChange ?? []}
+          absenceDurationOptions={step.options?.cycleAbsentDuration ?? []}
           onSelect={(value) => onAnswer('cycleChange', value)}
+          onSelectAbsenceDuration={(value) => onAnswer('cycleAbsentDuration', value)}
         />
         <ChoiceRow
           label="3. 最近 12 个月月经量是否明显变化？"
