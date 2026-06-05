@@ -6,6 +6,8 @@ import './styles/tokens.css';
 import './styles/base.css';
 import './styles/scenes/scene2.css';
 import './styles/scenes/scene3.css';
+import './styles/scenes/kegel-review.css';
+import './styles/scenes/kegel-training.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

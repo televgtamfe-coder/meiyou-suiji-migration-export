@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react';
 import { AssessmentFieldKey } from '../assessmentSteps';
 import {
   Scene1AssessmentState,
@@ -29,12 +30,22 @@ export function PerimenopauseAssessmentShell({
   onNext,
   onPrevious,
 }: PerimenopauseAssessmentShellProps) {
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+
+  useLayoutEffect(() => {
+    if (!state.assessmentOpen || !bodyRef.current) {
+      return;
+    }
+
+    bodyRef.current.scrollTop = 0;
+  }, [state.assessmentOpen, state.currentStep, state.completed]);
+
   if (!state.assessmentOpen) {
     return null;
   }
 
-  const canAdvance = state.currentStep === 1 || state.completed || isAssessmentStepComplete(state);
-  const nextLabel = state.currentStep === 6 ? '完成评估' : '下一步';
+  const canAdvance = state.completed || isAssessmentStepComplete(state);
+  const nextLabel = state.currentStep === 5 ? '完成评估' : '下一步';
   const handlePrevious = () => {
     if (state.completed) {
       onPrevious(reopenAssessmentFromCompletion(state));
@@ -50,14 +61,31 @@ export function PerimenopauseAssessmentShell({
   };
 
   return (
-    <div className="scene1-assessment-shell" data-testid="scene1-assessment-shell">
-      {!state.completed ? <AssessmentProgress currentStep={state.currentStep} totalSteps={6} /> : null}
+    <div
+      className="scene1-assessment-shell scene1-assessment-shell-compact"
+      data-testid="scene1-assessment-shell"
+    >
+      {!state.completed ? <AssessmentProgress currentStep={state.currentStep} totalSteps={5} /> : null}
 
-      <div className="scene1-assessment-body">
+      <div
+        ref={bodyRef}
+        className={
+          state.completed
+            ? 'scene1-assessment-body scene1-assessment-body-complete'
+            : 'scene1-assessment-body'
+        }
+      >
         <AssessmentStepRenderer state={state} onAnswer={onAnswer} />
       </div>
 
-      <div className="scene1-assessment-footer">
+      <div
+        className={
+          state.completed
+            ? 'scene1-assessment-footer scene1-assessment-footer-complete'
+            : 'scene1-assessment-footer'
+        }
+        data-testid="scene1-assessment-footer"
+      >
         <button
           type="button"
           className="scene1-assessment-secondary-btn"
@@ -80,7 +108,7 @@ export function PerimenopauseAssessmentShell({
             className="scene1-assessment-primary-btn"
             disabled={!canAdvance}
             onClick={() => {
-              if (state.currentStep === 6) {
+              if (state.currentStep === 5) {
                 onNext(completeAssessment(state));
                 return;
               }

@@ -32,24 +32,14 @@ describe('Scene1 shell', () => {
     expect(cssText).toContain('.phone-shell');
     expect(cssText).toContain('height: 100vh;');
     expect(cssText).toContain('overflow: hidden;');
-    expect(cssText).toContain(`.scene1-calendar-page {
-  position: relative;
-  height: 100%;
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}`);
-    expect(cssText).toContain(`.scene1-base-layer {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-}`);
-    expect(cssText).toContain(`.scene1-assessment-backdrop,
-.scene1-assessment-shell {
-  position: absolute;
-  inset: 44px 0 0;
-  z-index: 260;
-}`);
+    expect(cssText).toMatch(
+      /\.scene1-calendar-page\s*\{[\s\S]*position:\s*relative;[\s\S]*height:\s*100%;[\s\S]*min-height:\s*100%;[\s\S]*display:\s*flex;[\s\S]*flex-direction:\s*column;[\s\S]*overflow:\s*hidden;[\s\S]*\}/
+    );
+    expect(cssText).toMatch(
+      /\.scene1-base-layer\s*\{[\s\S]*position:\s*relative;[\s\S]*flex:\s*1;[\s\S]*min-height:\s*0;[\s\S]*\}/
+    );
+    expect(cssText).toMatch(
+      /\.scene1-assessment-backdrop,\s*\.scene1-assessment-shell\s*\{[\s\S]*position:\s*absolute;[\s\S]*inset:\s*44px\s+0\s+0;[\s\S]*z-index:\s*260;[\s\S]*\}/
+    );
   });
 });

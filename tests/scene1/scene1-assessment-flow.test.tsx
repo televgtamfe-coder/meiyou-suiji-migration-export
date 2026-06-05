@@ -22,7 +22,7 @@ async function fillProfileStep(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe('scene1 assessment flow', () => {
-  it('uses the approved standardized typography scale across steps 1-6 and the result page', () => {
+  it('uses the approved standardized typography scale across steps 1-5 and the result page', () => {
     const cssText = readFileSync(resolve(process.cwd(), 'src/styles/base.css'), 'utf8');
 
     expect(cssText).toContain('--scene1-assessment-title-size: 20px;');
@@ -38,7 +38,8 @@ describe('scene1 assessment flow', () => {
     expect(cssText).toMatch(/\.scene1-assessment-question\s*\{[\s\S]*font-size:\s*var\(--scene1-assessment-question-size\);/);
     expect(cssText).toMatch(/\.scene1-assessment-body-copy\s*\{[\s\S]*font-size:\s*var\(--scene1-assessment-body-size\);/);
     expect(cssText).toMatch(/\.scene1-assessment-choice-label\s*\{[\s\S]*font-size:\s*var\(--scene1-assessment-option-size\);/);
-    expect(cssText).toMatch(/\.scene1-assessment-result-overview-gauge-core strong\s*\{[\s\S]*font-size:\s*var\(--scene1-assessment-number-size\);/);
+    expect(cssText).toMatch(/\.scene1-assessment-result-overview-gauge-core strong\s*\{[\s\S]*font-size:\s*31px;/);
+    expect(cssText).toMatch(/\.scene1-assessment-result-overview-kmi-score strong\s*\{[\s\S]*font-size:\s*24px;/);
   });
 
   it('requires answers before advancing and keeps answers when going back', async () => {
@@ -52,18 +53,18 @@ describe('scene1 assessment flow', () => {
 
     await user.click(screen.getByRole('button', { name: '立即评估' }));
 
-    expect(screen.getByText('个人健康洞察')).toBeInTheDocument();
-    expect(screen.getByText('快速便捷')).toBeInTheDocument();
-    expect(screen.getByText('健康参考')).toBeInTheDocument();
-    expect(screen.getByText('评估须知')).toBeInTheDocument();
-    expect(screen.getByText('您的数据受到加密保护')).toBeInTheDocument();
+    expect(screen.getByText('个人生理特征')).toBeInTheDocument();
+    expect(screen.queryByText('个人健康洞察')).not.toBeInTheDocument();
+    expect(screen.queryByText('快速便捷')).not.toBeInTheDocument();
+    expect(screen.getByText('预计耗时 3-5 分钟，覆盖基础信息、周期变化、症状表现与 KMI 评估。')).toBeInTheDocument();
+    expect(
+      screen.getByText('结果用于健康管理参考，不能替代医生诊断，如存在异常出血或持续不适，请及时就医。'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('你的数据受到加密保护')).toBeInTheDocument();
+    expect(screen.getByText('步骤 1 / 5')).toBeInTheDocument();
 
     const firstNextButton = screen.getByRole('button', { name: '下一步' });
-    expect(firstNextButton).toBeEnabled();
-    await user.click(firstNextButton);
-
-    const secondNextButton = screen.getByRole('button', { name: '下一步' });
-    expect(secondNextButton).toBeDisabled();
+    expect(firstNextButton).toBeDisabled();
 
     await fillProfileStep(user);
 
@@ -71,7 +72,8 @@ describe('scene1 assessment flow', () => {
     await user.click(screen.getByRole('button', { name: '下一步' }));
 
     expect(screen.getByText('最近的月经周期有什么变化？')).toBeInTheDocument();
-    expect(screen.getByText('（记录数据读取，无记录数据填写）')).toBeInTheDocument();
+    expect(screen.getByText('步骤 2 / 5')).toBeInTheDocument();
+    expect(screen.queryByText('（记录数据读取，无记录数据填写）')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '下一步' })).toBeDisabled();
     await user.click(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' }));
     await user.click(screen.getByRole('button', { name: '已经很久没来了（请选择具体时长）' }));
@@ -106,7 +108,6 @@ describe('scene1 assessment flow', () => {
     );
 
     await user.click(screen.getByRole('button', { name: '立即评估' }));
-    await user.click(screen.getByRole('button', { name: '下一步' }));
 
     await user.click(screen.getByRole('button', { name: '年龄' }));
     expect(screen.getByRole('dialog', { name: '年龄' })).toBeInTheDocument();
@@ -138,7 +139,6 @@ describe('scene1 assessment flow', () => {
     );
 
     await user.click(screen.getByRole('button', { name: '立即评估' }));
-    await user.click(screen.getByRole('button', { name: '下一步' }));
 
     await fillProfileStep(user);
     await user.click(screen.getByRole('button', { name: '下一步' }));
@@ -207,8 +207,8 @@ describe('scene1 assessment flow', () => {
     );
 
     await user.click(screen.getByRole('button', { name: '立即评估' }));
-    await user.click(screen.getByRole('button', { name: '下一步' }));
     await fillProfileStep(user);
+    await user.click(screen.getByRole('button', { name: '下一步' }));
     await user.click(screen.getByRole('button', { name: '上一步' }));
     await user.click(screen.getByRole('button', { name: '上一步' }));
 
@@ -236,7 +236,6 @@ describe('scene1 assessment flow', () => {
     );
 
     await user.click(screen.getByRole('button', { name: '立即评估' }));
-    await user.click(screen.getByRole('button', { name: '下一步' }));
     await fillProfileStep(user);
     await user.click(screen.getByRole('button', { name: '下一步' }));
     await user.click(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' }));
@@ -250,7 +249,7 @@ describe('scene1 assessment flow', () => {
     await user.click(screen.getByRole('button', { name: '是，正在进行治疗' }));
     await user.click(screen.getByRole('button', { name: '下一步' }));
 
-    expect(screen.getByText('KMI 题组 1')).toBeInTheDocument();
+    expect(screen.getByText('请根据最近1个月的实际感受进行选择')).toBeInTheDocument();
     expect(screen.getByText('<3次/日')).toBeInTheDocument();
     expect(screen.getByText('3-9次/日')).toBeInTheDocument();
     expect(screen.getByText('偶尔出现')).toBeInTheDocument();
@@ -265,7 +264,7 @@ describe('scene1 assessment flow', () => {
     await chooseInBlock('眩晕', '轻度');
     await user.click(screen.getByRole('button', { name: '下一步' }));
 
-    expect(screen.getByText('KMI 题组 2')).toBeInTheDocument();
+    expect(screen.getByText('完成最后一组后，我们会展示本次评估完成结果。')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '完成评估' })).toBeInTheDocument();
 
     await chooseInBlock('疲乏（乏力、易疲劳）', '轻度');
@@ -277,29 +276,27 @@ describe('scene1 assessment flow', () => {
     await chooseInBlock('尿路症状（尿频、尿急）', '无症状');
     await user.click(screen.getByRole('button', { name: '完成评估' }));
 
-    expect(screen.getByText('评估已完成')).toBeInTheDocument();
     expect(screen.getByText('围绝经期过渡早期')).toBeInTheDocument();
     expect(screen.queryByText('文档规则映射')).not.toBeInTheDocument();
-    expect(screen.getByText('判断依据')).toBeInTheDocument();
-    expect(screen.getByText('年龄')).toBeInTheDocument();
-    expect(screen.getByText('末次月经')).toBeInTheDocument();
-    expect(screen.getByText('周期变化')).toBeInTheDocument();
+    expect(screen.queryByText('判断依据')).not.toBeInTheDocument();
     expect(screen.getByText('最终结果分析与判断')).toBeInTheDocument();
     expect(screen.getByText('KMI 指数评估')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-assessment-result-overview-card')).toBeInTheDocument();
     expect(screen.getAllByText('骨健康与维生素D风险').length).toBeGreaterThan(0);
     expect(screen.getAllByText('运动能力初筛').length).toBeGreaterThan(0);
-    expect(screen.getByText('24 / 63')).toBeInTheDocument();
+    expect(screen.getByLabelText('24 / 63')).toBeInTheDocument();
     expect(screen.getAllByText('中度综合征').length).toBeGreaterThan(0);
     expect(window.localStorage.getItem('scene1:kmi-score')).toBe('24');
-    const radarContainer = document.querySelector('.scene1-assessment-result-radar-stage');
 
-    expect(radarContainer).not.toBeNull();
-    expect(radarContainer?.querySelectorAll('.scene1-assessment-result-radar-metric')).toHaveLength(5);
-    expect(radarContainer?.querySelector('.scene1-assessment-result-radar-metric-top')).not.toBeNull();
-    expect(radarContainer?.querySelector('.scene1-assessment-result-radar-metric-top-right')).not.toBeNull();
-    expect(radarContainer?.querySelector('.scene1-assessment-result-radar-metric-bottom-right')).not.toBeNull();
-    expect(radarContainer?.querySelector('.scene1-assessment-result-radar-metric-bottom-left')).not.toBeNull();
-    expect(radarContainer?.querySelector('.scene1-assessment-result-radar-metric-top-left')).not.toBeNull();
+    expect(screen.getByTestId('scene1-assessment-result-pictorial-chart')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-assessment-result-pictorial-marker-column')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-assessment-result-radar-metric-bone-health-reserve')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-assessment-result-radar-metric-kmi-health')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-assessment-result-radar-metric-cycle-stability')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-assessment-result-radar-metric-exercise-safety')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-assessment-result-radar-metric-special-factor')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-assessment-result-radar-metric-mental-sleep')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-assessment-result-radar-metric-genitourinary-reproductive')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '上一步' })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: '返回' })).toHaveLength(1);
     expect(screen.getByRole('button', { name: '进入围绝经期模式' })).toBeInTheDocument();
@@ -325,7 +322,6 @@ describe('scene1 assessment flow', () => {
     );
 
     await user.click(screen.getByRole('button', { name: '立即评估' }));
-    await user.click(screen.getByRole('button', { name: '下一步' }));
     await fillProfileStep(user);
     await user.click(screen.getByRole('button', { name: '下一步' }));
     await user.click(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' }));
@@ -356,7 +352,7 @@ describe('scene1 assessment flow', () => {
 
     await user.click(screen.getByRole('button', { name: '进入围绝经期模式' }));
 
-    expect(screen.queryByText('评估已完成')).not.toBeInTheDocument();
+    expect(screen.queryByText('围绝经期过渡早期')).not.toBeInTheDocument();
     expect(screen.getByTestId('scene1-perimenopause-route-shell')).toBeInTheDocument();
     expect(screen.queryByRole('dialog', { name: '开启您的围绝经期健康评估' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '围经期' })).not.toBeInTheDocument();
@@ -372,13 +368,14 @@ describe('scene1 assessment flow', () => {
     );
 
     await user.click(screen.getByRole('button', { name: '立即评估' }));
-    await user.click(screen.getByRole('button', { name: '下一步' }));
     await fillProfileStep(user);
     await user.click(screen.getByRole('button', { name: '下一步' }));
 
-    expect(screen.getByText('围绝经期的识别通常需要结合年龄、月经变化和症状综合判断。')).toBeInTheDocument();
-    expect(screen.getByText('追踪这些变化有助于识别您目前所处的围绝经期阶段。请根据您过去3-6个月的实际情况进行选择。')).toBeInTheDocument();
-    expect(screen.getByText('（记录数据读取，无记录数据填写）')).toBeInTheDocument();
+    expect(screen.queryByText('围绝经期的识别通常需要结合年龄、月经变化和症状综合判断。')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('追踪这些变化有助于识别您目前所处的围绝经期阶段。请根据您过去3-6个月的实际情况进行选择。'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('（记录数据读取，无记录数据填写）')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' }));
     await user.click(screen.getByRole('button', { name: '每月基本都来，但周期有时提前或推后超过7天' }));
@@ -416,9 +413,10 @@ describe('scene1 assessment flow', () => {
     await chooseInBlock('眩晕', '轻度');
     await user.click(screen.getByRole('button', { name: '下一步' }));
 
-    expect(screen.getByText('身体症状')).toBeInTheDocument();
-    expect(screen.getByText('神经与感官')).toBeInTheDocument();
-    expect(screen.getByText('生活质量')).toBeInTheDocument();
+    expect(screen.queryByText('身体症状')).not.toBeInTheDocument();
+    expect(screen.queryByText('神经与感官')).not.toBeInTheDocument();
+    expect(screen.queryByText('生活质量')).not.toBeInTheDocument();
+    expect(screen.getByText('完成最后一组后，我们会展示本次评估完成结果。')).toBeInTheDocument();
     expect(screen.getByText('数据高度加密')).toBeInTheDocument();
   }, 15000);
 
@@ -432,7 +430,6 @@ describe('scene1 assessment flow', () => {
     );
 
     await user.click(screen.getByRole('button', { name: '立即评估' }));
-    await user.click(screen.getByRole('button', { name: '下一步' }));
     await fillProfileStep(user);
     await user.click(screen.getByRole('button', { name: '下一步' }));
     await user.click(screen.getByRole('button', { name: '是的，仍有规律或不规律月经' }));
@@ -443,6 +440,6 @@ describe('scene1 assessment flow', () => {
 
     expect(screen.getByText('以下情况可能会影响结果判断')).toBeInTheDocument();
     expect(screen.queryByText('这些症状最近对你影响大吗？')).not.toBeInTheDocument();
-    expect(screen.getByText('步骤 4 / 6')).toBeInTheDocument();
+    expect(screen.getByText('步骤 3 / 5')).toBeInTheDocument();
   });
 });

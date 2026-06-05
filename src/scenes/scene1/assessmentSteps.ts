@@ -1,6 +1,6 @@
 import { kmiRules } from './kmiRules';
 
-export type AssessmentStepId = 1 | 2 | 3 | 4 | 5 | 6;
+export type AssessmentStepId = 1 | 2 | 3 | 4 | 5;
 
 export type AssessmentFieldKey =
   | 'age'
@@ -51,18 +51,12 @@ const kmiOptionMap = Object.fromEntries(kmiRules.map((rule) => [rule.field, rule
 export const assessmentSteps: AssessmentStepDefinition[] = [
   {
     id: 1,
-    title: '开始评估',
+    title: '围绝经期评估',
     subtitle: '花几分钟，快速了解当前围绝经期状态。',
-    requiredFields: [],
-  },
-  {
-    id: 2,
-    title: '先了解一下你的基本信息',
-    subtitle: '这些信息会帮助我们更准确地理解你的身体状态。',
     requiredFields: ['age', 'heightCm', 'weightKg'],
   },
   {
-    id: 3,
+    id: 2,
     title: '最近的月经周期有什么变化？',
     subtitle: '请选择最符合你最近状态的选项。',
     requiredFields: ['periodPresence', 'cycleChange', 'volumeChange', 'lastPeriodQuickOption'],
@@ -97,7 +91,7 @@ export const assessmentSteps: AssessmentStepDefinition[] = [
     },
   },
   {
-    id: 4,
+    id: 3,
     title: '以下情况可能会影响结果判断',
     subtitle: '这些信息会帮助结果解释更贴近实际。',
     requiredFields: [
@@ -127,9 +121,9 @@ export const assessmentSteps: AssessmentStepDefinition[] = [
     },
   },
   {
-    id: 5,
+    id: 4,
     title: 'KMI 题组 1',
-    subtitle: '请选择最符合你最近状态的程度。',
+    subtitle: '请根据最近1个月的实际感受进行选择',
     requiredFields: [
       'kmiHotFlashes',
       'kmiParesthesia',
@@ -148,7 +142,7 @@ export const assessmentSteps: AssessmentStepDefinition[] = [
     },
   },
   {
-    id: 6,
+    id: 5,
     title: 'KMI 题组 2',
     subtitle: '完成最后一组后，我们会展示本次评估完成结果。',
     requiredFields: [

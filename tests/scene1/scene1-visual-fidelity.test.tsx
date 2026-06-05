@@ -18,14 +18,19 @@ describe('scene1 visual fidelity', () => {
 
     expect(screen.getByRole('tablist', { name: '模式切换' })).toBeInTheDocument();
     expect(screen.getByText('今天')).toBeInTheDocument();
-    expect(screen.getByText('📷 ›')).toBeInTheDocument();
-    expect(screen.getByText('💧')).toBeInTheDocument();
-    expect(screen.getByText('🍎')).toBeInTheDocument();
-    expect(screen.getByText('☕')).toBeInTheDocument();
-    expect(screen.getByText('🏃')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '分析' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '是' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '否' })).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-record-list')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-record-period-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-record-love-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-record-symptom-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-record-mood-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-record-discharge-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-record-temp-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-record-weight-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-record-diary-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-record-habit-icon')).toBeInTheDocument();
     expect(screen.getByText('记录')).toBeInTheDocument();
     expect(screen.getByText('点滴')).toBeInTheDocument();
     expect(screen.getByText('消息')).toBeInTheDocument();

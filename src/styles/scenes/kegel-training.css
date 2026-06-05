@@ -1,0 +1,263 @@
+.kegel-training-page {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at top left, rgba(141, 84, 255, 0.18), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(255, 77, 136, 0.16), transparent 30%),
+    linear-gradient(180deg, #fff9fc 0%, #f7f2fb 54%, #f1eef9 100%);
+  color: var(--my-text-primary);
+  overflow-y: auto;
+}
+
+.kegel-training-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 12px 20px;
+}
+
+.kegel-training-topbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 4px 0;
+}
+
+.kegel-training-topbar-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kegel-training-kicker,
+.kegel-training-meta-label,
+.kegel-training-ring-label,
+.kegel-training-copy-kicker,
+.kegel-training-summary-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--my-text-tertiary);
+}
+
+.kegel-training-title {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.15;
+  font-weight: 700;
+}
+
+.kegel-training-note,
+.kegel-training-copy p,
+.kegel-training-summary-card p,
+.kegel-training-done-banner p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--my-text-secondary);
+}
+
+.kegel-training-meta-card,
+.kegel-training-hero-card,
+.kegel-training-controls-card,
+.kegel-training-done-banner {
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  box-shadow: 0 18px 42px rgba(68, 50, 92, 0.1);
+  backdrop-filter: blur(14px);
+}
+
+.kegel-training-meta-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+}
+
+.kegel-training-meta-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kegel-training-meta-row strong {
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.kegel-training-meta-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--my-text-secondary);
+}
+
+.kegel-training-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kegel-training-hero-card,
+.kegel-training-controls-card,
+.kegel-training-done-banner {
+  padding: 14px;
+}
+
+.kegel-training-hero-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 244, 252, 0.96) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.kegel-training-ring-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.kegel-training-ring {
+  --ring-progress: 0%;
+  width: 196px;
+  height: 196px;
+  border-radius: 50%;
+  background: conic-gradient(var(--my-brand-red) var(--ring-progress), rgba(255, 77, 136, 0.1) 0%);
+  display: grid;
+  place-items: center;
+  position: relative;
+  box-shadow: 0 20px 44px rgba(255, 77, 136, 0.18);
+}
+
+.kegel-training-ring::after {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.kegel-training-ring-center {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.kegel-training-ring-center strong {
+  font-size: 56px;
+  line-height: 1;
+}
+
+.kegel-training-copy {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kegel-training-copy strong,
+.kegel-training-summary-card strong,
+.kegel-training-done-banner strong {
+  display: block;
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.kegel-training-phase-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.kegel-training-phase-chip {
+  padding: 10px 8px;
+  border-radius: 16px;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--my-text-secondary);
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(141, 84, 255, 0.08);
+}
+
+.kegel-training-phase-chip.active {
+  color: var(--my-purple);
+  background: rgba(141, 84, 255, 0.12);
+  border-color: rgba(141, 84, 255, 0.14);
+  font-weight: 600;
+}
+
+.kegel-training-controls-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kegel-training-summary-card {
+  padding: 12px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #fff 0%, #f8f4fd 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 12px 30px rgba(88, 65, 112, 0.08);
+}
+
+.kegel-training-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+  gap: 10px;
+}
+
+.kegel-training-primary-button,
+.kegel-training-secondary-button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 18px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.kegel-training-primary-button {
+  background: linear-gradient(90deg, var(--my-brand-red) 0%, var(--my-purple) 100%);
+  color: #fff;
+  box-shadow: 0 16px 32px rgba(141, 84, 255, 0.22);
+}
+
+.kegel-training-secondary-button {
+  background: rgba(141, 84, 255, 0.08);
+  color: var(--my-purple);
+  border: 1px solid rgba(141, 84, 255, 0.12);
+}
+
+.kegel-training-done-banner {
+  display: none;
+  align-items: flex-start;
+  gap: 12px;
+  background: linear-gradient(90deg, rgba(255, 77, 136, 0.08), rgba(141, 84, 255, 0.08));
+}
+
+.kegel-training-done-banner[data-stage='visible'] {
+  display: flex;
+}
+
+.kegel-training-check {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  background: linear-gradient(90deg, var(--my-brand-red) 0%, var(--my-purple) 100%);
+  box-shadow: 0 10px 20px rgba(141, 84, 255, 0.22);
+}

@@ -117,7 +117,7 @@ export function isAssessmentStepComplete(state: Scene1AssessmentState): boolean 
     return false;
   }
 
-  if (state.currentStep === 3 && state.answers.cycleChange === 'absent') {
+  if (state.currentStep === 2 && state.answers.cycleChange === 'absent') {
     return state.answers.cycleAbsentDuration.trim().length > 0;
   }
 
@@ -127,7 +127,7 @@ export function isAssessmentStepComplete(state: Scene1AssessmentState): boolean 
 export function goToNextAssessmentStep(state: Scene1AssessmentState): Scene1AssessmentState {
   return {
     ...state,
-    currentStep: Math.min(6, state.currentStep + 1) as AssessmentStepId,
+    currentStep: Math.min(5, state.currentStep + 1) as AssessmentStepId,
   };
 }
 
@@ -149,7 +149,7 @@ export function completeAssessment(state: Scene1AssessmentState): Scene1Assessme
 export function reopenAssessmentFromCompletion(state: Scene1AssessmentState): Scene1AssessmentState {
   return {
     ...state,
-    currentStep: 6,
+    currentStep: 5,
     completed: false,
     assessmentOpen: true,
   };

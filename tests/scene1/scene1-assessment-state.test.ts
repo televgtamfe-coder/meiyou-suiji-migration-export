@@ -37,10 +37,6 @@ describe('scene1 assessment state', () => {
   it('validates required fields per step and preserves answers while moving backwards', () => {
     let state = openAssessmentFlow(createAssessmentState());
 
-    expect(isAssessmentStepComplete(state)).toBe(true);
-
-    state = goToNextAssessmentStep(state);
-    expect(state.currentStep).toBe(2);
     expect(isAssessmentStepComplete(state)).toBe(false);
 
     state = answerAssessmentField(state, 'age', '42');
@@ -49,8 +45,10 @@ describe('scene1 assessment state', () => {
 
     expect(isAssessmentStepComplete(state)).toBe(true);
 
-    const stepThree = goToNextAssessmentStep(state);
-    let answered = answerAssessmentField(stepThree, 'periodPresence', 'yes');
+    const stepTwo = goToNextAssessmentStep(state);
+    expect(stepTwo.currentStep).toBe(2);
+
+    let answered = answerAssessmentField(stepTwo, 'periodPresence', 'yes');
     answered = answerAssessmentField(answered, 'cycleChange', 'shorter');
     answered = answerAssessmentField(answered, 'volumeChange', 'lighter');
 
@@ -59,7 +57,7 @@ describe('scene1 assessment state', () => {
     answered = answerAssessmentField(answered, 'lastPeriodQuickOption', 'current-period');
     const steppedBack = goToPreviousAssessmentStep(answered);
 
-    expect(steppedBack.currentStep).toBe(2);
+    expect(steppedBack.currentStep).toBe(1);
     expect(steppedBack.answers.age).toBe('42');
     expect(answered.answers.periodPresence).toBe('yes');
     expect(answered.answers.lastPeriodQuickOption).toBe('current-period');
@@ -68,7 +66,7 @@ describe('scene1 assessment state', () => {
   it('marks the flow complete after the final step is submitted', () => {
     const finished = completeAssessment({
       ...openAssessmentFlow(createAssessmentState()),
-      currentStep: 6,
+      currentStep: 5,
     });
 
     expect(finished.completed).toBe(true);
@@ -79,12 +77,12 @@ describe('scene1 assessment state', () => {
     const reopened = reopenAssessmentFromCompletion(
       completeAssessment({
         ...openAssessmentFlow(createAssessmentState()),
-        currentStep: 6,
+        currentStep: 5,
       })
     );
 
     expect(reopened.completed).toBe(false);
-    expect(reopened.currentStep).toBe(6);
+    expect(reopened.currentStep).toBe(5);
     expect(reopened.assessmentOpen).toBe(true);
   });
 
@@ -92,7 +90,7 @@ describe('scene1 assessment state', () => {
     const exited = exitAssessmentFlow(
       completeAssessment({
         ...openAssessmentFlow(createAssessmentState()),
-        currentStep: 6,
+        currentStep: 5,
       })
     );
 
@@ -102,12 +100,12 @@ describe('scene1 assessment state', () => {
     expect(exited.currentStep).toBe(1);
   });
 
-  it('caps the assessment flow at step 6 because the original design has no standalone step 4 symptom page', () => {
+  it('caps the assessment flow at step 5 after merging the intro and profile steps', () => {
     const advanced = goToNextAssessmentStep({
       ...openAssessmentFlow(createAssessmentState()),
-      currentStep: 6,
+      currentStep: 5,
     });
 
-    expect(advanced.currentStep).toBe(6);
+    expect(advanced.currentStep).toBe(5);
   });
 });

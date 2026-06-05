@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import type { EChartsOption, EChartsType } from 'echarts';
 import { AssessmentFieldKey, AssessmentOption, getAssessmentStep } from '../assessmentSteps';
 import { Scene1AssessmentState } from '../assessmentState';
 import { getKmiScoreSummary, pickCompletedKmiAnswers } from '../kmiScoring';
 import { kmiRules } from '../kmiRules';
 import { getResultDecisionSummary } from '../resultDecision';
+import { AssessmentStageClockSummary } from './AssessmentStageClockSummary';
 
 type AssessmentStepRendererProps = {
   state: Scene1AssessmentState;
@@ -64,6 +66,8 @@ type KmiGroupProps = {
   answers: Scene1AssessmentState['answers'];
   onAnswer: (field: AssessmentFieldKey, value: string) => void;
 };
+
+type KmiQuestionRowsProps = Omit<KmiGroupProps, 'title'>;
 
 const kmiPrompts: KmiPrompt[] = kmiRules.map((rule) => ({
   field: rule.field,
@@ -186,17 +190,16 @@ type ProfilePickerSheetProps = {
   onConfirm: () => void;
 };
 
-type ResultStageEvidence = {
+type ResultStageFact = {
   label: string;
   value: string;
-  detail: string;
 };
 
 type ResultStageSummary = {
   title: string;
   summary: string;
   tone: ResultBadgeTone;
-  evidences: ResultStageEvidence[];
+  facts: ResultStageFact[];
 };
 
 function parseDateString(value: string) {
@@ -353,18 +356,6 @@ function getCycleChangeValue(answers: Scene1AssessmentState['answers']) {
     return '完全不确定 / 没关注过';
   }
 
-  if (answers.cycleChange === 'shorter') {
-    return '周期较以前提前，波动超过 7 天';
-  }
-
-  if (answers.cycleChange === 'longer') {
-    return '周期延长，间隔明显拉长';
-  }
-
-  if (answers.cycleChange === 'same') {
-    return '周期整体规律，暂未见明显波动';
-  }
-
   return '周期变化暂不明确';
 }
 
@@ -380,30 +371,25 @@ export function getStageSummary(
     lastPeriodGapDays !== null && reportedGapDays !== null
       ? Math.max(lastPeriodGapDays, reportedGapDays)
       : (reportedGapDays ?? lastPeriodGapDays);
-  const lastPeriodValue = formatLastPeriodValue(answers, effectiveLastPeriodGapDays);
-  const cycleChangeValue = getCycleChangeValue(answers);
-  const evidences: ResultStageEvidence[] = [
+  const facts: ResultStageFact[] = [
     {
       label: '年龄',
       value: age === null ? '未填写' : `${age}岁`,
-      detail: '40-48 岁出现周期波动，更符合过渡阶段。',
     },
     {
       label: '末次月经',
-      value: lastPeriodValue,
-      detail: '3-11 个月偏向过渡晚期，≥12 个月需结合年龄看绝经风险。',
+      value: formatLastPeriodValue(answers, effectiveLastPeriodGapDays),
     },
     {
       label: '周期变化',
-      value: cycleChangeValue,
-      detail: '提前或推后超过 7 天，优先提示过渡早期。',
+      value: getCycleChangeValue(answers),
     },
   ];
   const buildSummary = (title: string, summary: string, tone: ResultBadgeTone): ResultStageSummary => ({
     title,
     summary,
     tone,
-    evidences,
+    facts,
   });
 
   if (answers.cycleChange === 'absent') {
@@ -911,11 +897,20 @@ function SupportPanel({
   title: string;
   body: string;
 }) {
+  if (title === '再了解一下你的月经变化') {
+    return null;
+  }
+
   return (
-    <div className="scene1-assessment-support-panel">
-      <span className="scene1-assessment-support-kicker">{kicker}</span>
-      <h3 className="scene1-assessment-support-title">{title}</h3>
-      <p className="scene1-assessment-support-body">{body}</p>
+    <div
+      className="scene1-assessment-support-panel scene1-assessment-footnote"
+      data-testid="scene1-assessment-support-panel"
+    >
+      {kicker ? (
+        <span className="scene1-assessment-support-kicker scene1-assessment-footnote-label">{kicker}</span>
+      ) : null}
+      <h3 className="scene1-assessment-support-title scene1-assessment-footnote-title">{title}</h3>
+      <p className="scene1-assessment-support-body scene1-assessment-footnote-body">{body}</p>
     </div>
   );
 }
@@ -927,25 +922,17 @@ function InlineBanner({
   title: string;
   body: string;
 }) {
-  return (
-    <div className="scene1-assessment-banner">
-      <strong>{title}</strong>
-      <p>{body}</p>
-    </div>
-  );
-}
+  if (title === '围绝经期的识别通常需要结合年龄、月经变化和症状综合判断。') {
+    return null;
+  }
 
-function IntroFeatureCard({
-  title,
-  body,
-}: {
-  title: string;
-  body: string;
-}) {
   return (
-    <div className="scene1-assessment-intro-feature">
-      <h3>{title}</h3>
-      <p>{body}</p>
+    <div
+      className="scene1-assessment-banner scene1-assessment-footnote"
+      data-testid="scene1-assessment-inline-banner"
+    >
+      <strong className="scene1-assessment-footnote-title">{title}</strong>
+      <p className="scene1-assessment-footnote-body">{body}</p>
     </div>
   );
 }
@@ -989,18 +976,38 @@ function KmiGroup({ title, prompts, options, answers, onAnswer }: KmiGroupProps)
 type ResultBadgeTone = 'pink' | 'orange' | 'green';
 
 type ResultHighlightItem = {
+  id: string;
   title: string;
   tag: string;
   body: string;
   tone: ResultBadgeTone;
+  analysis?: string;
 };
 
 type ResultRadarMetric = {
+  id?: string;
   label: string;
   score: number;
 };
 
-const radarMetricPositions = ['top', 'top-right', 'bottom-right', 'bottom-left', 'top-left'] as const;
+type ResultScoreStageTone = 'alert' | 'focus' | 'good' | 'excellent';
+
+type ResultScoreStage = {
+  label: string;
+  description: string;
+  tone: ResultScoreStageTone;
+};
+
+const mentalSleepFields = ['kmiInsomnia', 'kmiNervousness', 'kmiMelancholia', 'kmiFatigue'] as const;
+const genitourinaryReproductiveFields = ['kmiSexualImpact', 'kmiUrinarySymptoms'] as const;
+const pictorialChartGridTop = 10;
+const pictorialChartGridBottom = 18;
+const resultScoreStages: ResultScoreStage[] = [
+  { label: '预警', description: '<65', tone: 'alert' },
+  { label: '关注', description: '65-74', tone: 'focus' },
+  { label: '良好', description: '75-84', tone: 'good' },
+  { label: '优秀', description: '≥85', tone: 'excellent' },
+];
 
 function getSeverityTone(severity: number): ResultBadgeTone {
   if (severity >= 2) {
@@ -1151,22 +1158,371 @@ function getDecisionDisplayScore(label: string) {
   return 86;
 }
 
-function buildRadarPath(scores: number[]) {
-  const centerX = 110;
-  const centerY = 110;
-  const radius = 64;
+function getKmiSubgroupHealthScore(
+  details: Array<{ field: string; weight: number; score: number }>,
+  fields: readonly string[],
+) {
+  const fieldSet = new Set(fields);
+  const subgroupItems = details.filter((item) => fieldSet.has(item.field));
 
-  return scores
-    .map((score, index) => {
-      const angle = (-90 + index * (360 / scores.length)) * (Math.PI / 180);
-      const distance = (Math.max(0, Math.min(100, score)) / 100) * radius;
-      const x = centerX + Math.cos(angle) * distance;
-      const y = centerY + Math.sin(angle) * distance;
+  if (subgroupItems.length === 0) {
+    return 100;
+  }
 
-      return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
-    })
-    .join(' ')
-    .concat(' Z');
+  const subgroupScore = subgroupItems.reduce((sum, item) => sum + item.score, 0);
+  const subgroupMax = subgroupItems.reduce((sum, item) => sum + item.weight * 3, 0);
+
+  if (subgroupMax <= 0) {
+    return 100;
+  }
+
+  return Math.max(0, 100 - Math.round((subgroupScore / subgroupMax) * 100));
+}
+
+function getResultScoreStage(score: number): ResultScoreStage {
+  if (score >= 85) {
+    return resultScoreStages[3];
+  }
+
+  if (score >= 75) {
+    return resultScoreStages[2];
+  }
+
+  if (score >= 65) {
+    return resultScoreStages[1];
+  }
+
+  return resultScoreStages[0];
+}
+
+function buildPictorialBarOption(metrics: ResultRadarMetric[]): EChartsOption {
+  return {
+    animationDuration: 700,
+    animationDurationUpdate: 700,
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow',
+        shadowStyle: {
+          color: 'rgba(255, 107, 157, 0.08)',
+        },
+      },
+      formatter: (params) => {
+        const row = Array.isArray(params) ? params[0] : params;
+
+        return `${row.name}<br/>得分 ${row.data?.actualScore ?? row.value ?? 0}`;
+      },
+    },
+    grid: {
+      left: 8,
+      right: 8,
+      top: pictorialChartGridTop,
+      bottom: pictorialChartGridBottom,
+      containLabel: false,
+    },
+    xAxis: {
+      type: 'value',
+      min: 0,
+      max: 100,
+      interval: 25,
+      axisLine: {
+        show: false,
+      },
+      axisTick: {
+        show: false,
+      },
+      splitLine: {
+        show: false,
+      },
+      axisLabel: {
+        color: '#c3a1b0',
+        fontSize: 10,
+        align: 'left',
+      },
+    },
+    yAxis: {
+      type: 'category',
+      inverse: true,
+      data: metrics.map((item) => item.label),
+      axisLine: {
+        show: false,
+      },
+      axisTick: {
+        show: false,
+      },
+      axisLabel: {
+        color: '#6f5562',
+        fontSize: 13,
+        fontWeight: 600,
+        margin: 10,
+      },
+    },
+    series: [
+      {
+        type: 'pictorialBar',
+        z: 1,
+        symbol: 'circle',
+        symbolRepeat: 'fixed',
+        symbolBoundingData: 100,
+        symbolClip: false,
+        symbolSize: 7,
+        symbolMargin: 3,
+        itemStyle: {
+          color: 'rgba(255, 173, 197, 0.28)',
+        },
+        data: metrics.map((item) => ({
+          value: 100,
+          actualScore: item.score,
+        })),
+      },
+      {
+        type: 'pictorialBar',
+        z: 2,
+        symbol: 'circle',
+        symbolRepeat: 'fixed',
+        symbolBoundingData: 100,
+        symbolClip: true,
+        symbolSize: 7,
+        symbolMargin: 3,
+        emphasis: {
+          scale: false,
+        },
+        itemStyle: {
+          color: '#ff5d94',
+        },
+        data: metrics.map((item) => ({
+          value: item.score,
+          actualScore: item.score,
+        })),
+      },
+    ],
+  };
+}
+
+function AssessmentResultPictorialBarCard({ metrics }: { metrics: ResultRadarMetric[] }) {
+  const chartRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const container = chartRef.current;
+
+    if (!container || typeof window === 'undefined') {
+      return;
+    }
+
+    let chart: EChartsType | null = null;
+    let resizeObserver: ResizeObserver | null = null;
+    let disposed = false;
+
+    const applyOption = async () => {
+      const echarts = await import('echarts');
+
+      if (disposed || !container) {
+        return;
+      }
+
+      const renderChart = () => {
+        if (disposed || container.clientWidth === 0 || container.clientHeight === 0) {
+          return false;
+        }
+
+        chart = echarts.getInstanceByDom(container) ?? echarts.init(container, undefined, { renderer: 'svg' });
+        chart.setOption(buildPictorialBarOption(metrics), true);
+        chart.resize();
+
+        return true;
+      };
+
+      if (!renderChart() && typeof ResizeObserver !== 'undefined') {
+        resizeObserver = new ResizeObserver(() => {
+          if (renderChart()) {
+            resizeObserver?.disconnect();
+            resizeObserver = null;
+          }
+        });
+        resizeObserver.observe(container);
+      }
+    };
+
+    void applyOption();
+
+    const handleResize = () => {
+      chart?.resize();
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      disposed = true;
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', handleResize);
+      chart?.dispose();
+    };
+  }, [metrics]);
+
+  return (
+    <div className="scene1-assessment-result-pictorial-shell">
+      <p className="scene1-assessment-result-pictorial-note">
+        更高健康度对应更多填充圆点，采用 20 个圆点表达 100 分，每个圆点约代表 5 分。
+      </p>
+      <div
+        ref={chartRef}
+        className="scene1-assessment-result-pictorial-chart"
+        data-testid="scene1-assessment-result-pictorial-chart"
+      />
+      <div className="scene1-assessment-result-pictorial-metrics-raw" aria-hidden="true">
+        {metrics.map((item) => (
+          <div
+            key={item.id ?? item.label}
+            data-testid={`scene1-assessment-result-radar-metric-${item.id ?? item.label}`}
+          >
+            <strong>{item.label}</strong>
+            <span>{`得分 ${item.score}`}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function KmiQuestionRows({ prompts, options, answers, onAnswer }: KmiQuestionRowsProps) {
+  return (
+    <>
+      {prompts.map((item) => (
+        <ChoiceRow
+          key={item.field}
+          label={item.label}
+          value={answers[item.field]}
+          options={options[item.field] ?? []}
+          onSelect={(value) => onAnswer(item.field, value)}
+        />
+      ))}
+    </>
+  );
+}
+
+function AssessmentResultPictorialBarCardV2({ metrics }: { metrics: ResultRadarMetric[] }) {
+  const chartRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const container = chartRef.current;
+
+    if (!container || typeof window === 'undefined') {
+      return;
+    }
+
+    let chart: EChartsType | null = null;
+    let resizeObserver: ResizeObserver | null = null;
+    let disposed = false;
+
+    const applyOption = async () => {
+      const echarts = await import('echarts');
+
+      if (disposed || !container) {
+        return;
+      }
+
+      const renderChart = () => {
+        if (disposed || container.clientWidth === 0 || container.clientHeight === 0) {
+          return false;
+        }
+
+        chart = echarts.getInstanceByDom(container) ?? echarts.init(container, undefined, { renderer: 'svg' });
+        chart.setOption(buildPictorialBarOption(metrics), true);
+        chart.resize();
+
+        return true;
+      };
+
+      if (!renderChart() && typeof ResizeObserver !== 'undefined') {
+        resizeObserver = new ResizeObserver(() => {
+          if (renderChart()) {
+            resizeObserver?.disconnect();
+            resizeObserver = null;
+          }
+        });
+        resizeObserver.observe(container);
+      }
+    };
+
+    void applyOption();
+
+    const handleResize = () => {
+      chart?.resize();
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      disposed = true;
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', handleResize);
+      chart?.dispose();
+    };
+  }, [metrics]);
+
+  return (
+    <div className="scene1-assessment-result-pictorial-shell">
+      <div className="scene1-assessment-result-pictorial-frame">
+        <div className="scene1-assessment-result-pictorial-chart-shell">
+          <div
+            ref={chartRef}
+            className="scene1-assessment-result-pictorial-chart"
+            data-testid="scene1-assessment-result-pictorial-chart"
+          />
+          <div
+            className="scene1-assessment-result-pictorial-marker-column"
+            style={{
+              gridTemplateRows: `repeat(${metrics.length}, minmax(0, 1fr))`,
+              top: pictorialChartGridTop,
+              bottom: pictorialChartGridBottom,
+            }}
+            data-testid="scene1-assessment-result-pictorial-marker-column"
+          >
+            {metrics.map((item) => {
+              const stage = getResultScoreStage(item.score);
+
+              return (
+                <div
+                  key={item.id ?? item.label}
+                  className="scene1-assessment-result-pictorial-marker-row"
+                  data-testid={`scene1-assessment-result-pictorial-stage-marker-${item.id ?? item.label}`}
+                >
+                  <span
+                    className={`scene1-assessment-result-pictorial-stage-badge scene1-assessment-result-pictorial-stage-badge-inline scene1-assessment-result-pictorial-stage-badge-floating scene1-assessment-result-pictorial-stage-badge-above-line ${stage.tone}`}
+                    data-testid={`scene1-assessment-result-pictorial-stage-badge-${item.id ?? item.label}`}
+                  >
+                    {stage.label}
+                  </span>
+                  <strong
+                    className="scene1-assessment-result-pictorial-score-inline scene1-assessment-result-pictorial-score-anchor"
+                    data-testid={`scene1-assessment-result-pictorial-score-${item.id ?? item.label}`}
+                  >
+                    {item.score}
+                  </strong>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      <div className="scene1-assessment-result-pictorial-metrics-raw" aria-hidden="true">
+        {metrics.map((item) => {
+          const stage = getResultScoreStage(item.score);
+
+          return (
+            <div
+              key={item.id ?? item.label}
+              data-testid={`scene1-assessment-result-radar-metric-${item.id ?? item.label}`}
+            >
+              <strong>{item.label}</strong>
+              <span>{`得分 ${item.score}`}</span>
+              <em>{stage.label}</em>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function CompletionState({ answers }: { answers: Scene1AssessmentState['answers'] }) {
@@ -1189,6 +1545,11 @@ function CompletionState({ answers }: { answers: Scene1AssessmentState['answers'
   const cycleSummary = getCycleSummary(answers);
   const cycleHealthScore = getCycleHealthScore(answers);
   const kmiHealthScore = Math.max(18, 100 - Math.round((summary.total / summary.max) * 100));
+  const mentalSleepScore = getKmiSubgroupHealthScore(summary.details, mentalSleepFields);
+  const genitourinaryReproductiveScore = getKmiSubgroupHealthScore(
+    summary.details,
+    genitourinaryReproductiveFields,
+  );
   const boneHealthScore = getDecisionDisplayScore(decisionSummary.boneHealth.label);
   const exerciseScore = getDecisionDisplayScore(decisionSummary.exercise.label);
   const specialFactorScore = getSpecialFactorScore(answers);
@@ -1197,32 +1558,38 @@ function CompletionState({ answers }: { answers: Scene1AssessmentState['answers'
   );
   const highlightItems: ResultHighlightItem[] = [
     ...topSymptoms.map((item) => ({
+      id: item.field,
       title: item.label,
       tag: item.severity >= 2 ? '重点关注' : '持续观察',
       body: `本次评分 ${item.score} 分，当前为${item.severity}级表现，建议继续结合月经与触发因素记录变化。`,
       tone: getSeverityTone(item.severity),
     })),
     {
+      id: 'bone-health',
       title: '骨健康与维生素D风险',
       tag: decisionSummary.boneHealth.label,
       body: decisionSummary.boneHealth.summary,
       tone: getRiskToneFromDecisionLabel(decisionSummary.boneHealth.label),
+      analysis: decisionSummary.boneHealth.rationale,
     },
     {
+      id: 'exercise',
       title: '运动能力初筛',
       tag: decisionSummary.exercise.label,
       body: decisionSummary.exercise.summary,
       tone: getRiskToneFromDecisionLabel(decisionSummary.exercise.label),
+      analysis: decisionSummary.exercise.rationale,
     },
   ].slice(0, 5);
-  const radarMetrics: ResultRadarMetric[] = [
-    { label: 'KMI健康度', score: kmiHealthScore },
-    { label: '运动安全', score: exerciseScore },
-    { label: '特殊因素', score: specialFactorScore },
-    { label: '周期稳定', score: cycleHealthScore },
-    { label: '骨健康储备', score: boneHealthScore },
+  const breakdownMetrics: ResultRadarMetric[] = [
+    { id: 'bone-health-reserve', label: '骨健康储备', score: boneHealthScore },
+    { id: 'kmi-health', label: 'KMI健康度', score: kmiHealthScore },
+    { id: 'cycle-stability', label: '周期稳定', score: cycleHealthScore },
+    { id: 'exercise-safety', label: '运动安全', score: exerciseScore },
+    { id: 'special-factor', label: '特殊因素', score: specialFactorScore },
+    { id: 'mental-sleep', label: '精神与睡眠', score: mentalSleepScore },
+    { id: 'genitourinary-reproductive', label: '泌尿与生殖', score: genitourinaryReproductiveScore },
   ];
-  const radarPath = buildRadarPath(radarMetrics.map((item) => item.score));
   const cycleTag =
     answers.cycleChange === 'same'
       ? '周期相对规律'
@@ -1234,137 +1601,104 @@ function CompletionState({ answers }: { answers: Scene1AssessmentState['answers'
 
   return (
     <div className="scene1-assessment-result-page">
-      <section className={`scene1-assessment-result-stage-card ${stageSummary.tone}`}>
-        <div className="scene1-assessment-result-stage-head">
-          <div>
-            <span className="scene1-assessment-result-stage-kicker">阶段判断</span>
-            <h2>{stageSummary.title}</h2>
-          </div>
-        </div>
-        <p>{stageSummary.summary}</p>
-        <div className="scene1-assessment-result-stage-evidence">
-          <div className="scene1-assessment-result-stage-evidence-head">
-            <strong>判断依据</strong>
-            <span>年龄 / 末次月经 / 周期变化</span>
-          </div>
-          <div className="scene1-assessment-result-stage-evidence-grid">
-            {stageSummary.evidences.map((item) => (
-              <div key={item.label} className="scene1-assessment-result-stage-evidence-item">
-                <span>{item.label}</span>
-                <strong>{item.value}</strong>
-                <p>{item.detail}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="scene1-assessment-result-hero">
-        <div className="scene1-assessment-result-hero-top">
-          <p className="scene1-assessment-kicker">评估已完成</p>
-          <span className="scene1-assessment-result-hero-vip">结果分析</span>
-        </div>
-        <div className="scene1-assessment-result-switcher">
-          <button type="button" className="scene1-assessment-result-switcher-tab active">
-            当前结果
-          </button>
-          <button type="button" className="scene1-assessment-result-switcher-tab" disabled>
-            连续跟踪
-          </button>
-        </div>
-        <div className="scene1-assessment-result-chip-row">
-          <span className="scene1-assessment-result-chip active">综合解读</span>
-          <span className="scene1-assessment-result-chip">结果判断</span>
-          <span className="scene1-assessment-result-chip">管理建议</span>
-        </div>
-      </section>
+      <AssessmentStageClockSummary
+        resultTitle={stageSummary.title}
+        heading={stageSummary.title}
+        insight={stageSummary.summary}
+      />
 
       <section className="scene1-assessment-result-decision-section">
+        <h3 className="scene1-assessment-result-module-title">测评分析</h3>
         <h3>最终结果分析与判断</h3>
-        <div className="scene1-assessment-result-overview-card">
-          <div className="scene1-assessment-result-overview-gauge">
-            <div
-              className="scene1-assessment-result-overview-gauge-ring"
-              style={{
-                background: `conic-gradient(#ff6b9d 0deg ${Math.round(
-                  (overallHealthScore / 100) * 260
-                )}deg, rgba(255,255,255,0.42) ${Math.round((overallHealthScore / 100) * 260)}deg 260deg, rgba(255,255,255,0) 260deg 360deg)`,
-              }}
-              aria-hidden="true"
-            >
-              <div className="scene1-assessment-result-overview-gauge-core">
-                <span>健康分</span>
-                <strong>{overallHealthScore}</strong>
+        <div
+          className="scene1-assessment-result-overview-card"
+          data-testid="scene1-assessment-result-overview-card"
+        >
+          <div
+            className="scene1-assessment-result-overview-left"
+            data-testid="scene1-assessment-result-overview-left"
+          >
+            <div className="scene1-assessment-result-overview-gauge">
+              <div
+                className="scene1-assessment-result-overview-gauge-ring"
+                style={{
+                  background: `conic-gradient(#ff6b9d 0deg ${Math.round(
+                    (overallHealthScore / 100) * 260
+                  )}deg, rgba(255,255,255,0.42) ${Math.round((overallHealthScore / 100) * 260)}deg 260deg, rgba(255,255,255,0) 260deg 360deg)`,
+                }}
+                aria-hidden="true"
+              >
+                <div className="scene1-assessment-result-overview-gauge-core">
+                  <span>健康分</span>
+                  <strong>{overallHealthScore}</strong>
+                </div>
+              </div>
+              <div className="scene1-assessment-result-overview-gauge-foot">
+                <span>{cycleTag}</span>
+                <strong>{summary.interpretation.label}</strong>
               </div>
             </div>
-            <div className="scene1-assessment-result-overview-gauge-foot">
-              <span>{cycleTag}</span>
-              <strong>{summary.interpretation.label}</strong>
+
+            <div className="scene1-assessment-result-overview-kmi">
+              <div className="scene1-assessment-result-overview-kmi-head">
+                <h3>KMI 指数评估</h3>
+                <div
+                  className="scene1-assessment-result-overview-kmi-score"
+                  aria-label={`${summary.total} / ${summary.max}`}
+                >
+                  <strong>{summary.total}</strong>
+                  <span>/ {summary.max}</span>
+                </div>
+              </div>
+              <div className="scene1-assessment-result-progress" aria-hidden="true">
+                <div className="scene1-assessment-result-progress-fill" style={{ width: progressWidth }} />
+              </div>
+              <p>
+                当前分值对应“{summary.interpretation.label}”，阈值依据围绝经期评估规则：≤6 分为正常，7-15
+                分为轻度，16-30 分为中度，30 分以上为重度。
+              </p>
             </div>
           </div>
-          <div className="scene1-assessment-result-overview-main">
+          <div
+            className="scene1-assessment-result-overview-main"
+            data-testid="scene1-assessment-result-overview-main"
+          >
             <div className="scene1-assessment-result-overview-headline">
               <h2>{summary.interpretation.label}</h2>
               <p>{kmiDecisionSummary}</p>
             </div>
-            <div className="scene1-assessment-result-overview-tags">
+            <div
+              className="scene1-assessment-result-overview-main-foot"
+              data-testid="scene1-assessment-result-overview-main-foot"
+            >
+              <div
+                className="scene1-assessment-result-overview-tags"
+                data-testid="scene1-assessment-result-overview-tags"
+              >
               <span className="scene1-assessment-result-tag">KMI {summary.interpretation.label}</span>
               <span className="scene1-assessment-result-tag">{decisionSummary.boneHealth.label}</span>
               <span className="scene1-assessment-result-tag">{decisionSummary.exercise.label}</span>
             </div>
-            <div className="scene1-assessment-result-overview-summary">
+              <div
+                className="scene1-assessment-result-overview-summary"
+                data-testid="scene1-assessment-result-overview-summary"
+              >
               <strong>周期总结：</strong>
               <p>{cycleSummary}</p>
+            </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="scene1-assessment-result-grid">
-        <div className="scene1-assessment-result-score">
-          <div className="scene1-assessment-result-score-header scene1-assessment-result-score-header-stacked">
-            <h3>KMI 指数评估</h3>
-            <span>{`${summary.total} / ${summary.max}`}</span>
-          </div>
-          <div className="scene1-assessment-result-progress" aria-hidden="true">
-            <div className="scene1-assessment-result-progress-fill" style={{ width: progressWidth }} />
-          </div>
-          <p>
-            当前分值对应“{summary.interpretation.label}”，阈值依据围绝经期评估规则：≤6 分为正常，7-15
-            分为轻度，16-30 分为中度，30 分以上为重度。
-          </p>
-        </div>
-
-        <div className="scene1-assessment-result-details scene1-assessment-result-radar-card">
+      <section className="scene1-assessment-result-grid" data-testid="scene1-assessment-result-grid">
+        <div className="scene1-assessment-result-details scene1-assessment-result-pictorial-card">
           <div className="scene1-assessment-result-score-header">
+            <h3 className="scene1-assessment-result-module-title">指标拆解</h3>
             <h3>围绝经指标拆解</h3>
-            <span className="scene1-assessment-result-toggle-chip">综合</span>
+            <span className="scene1-assessment-result-toggle-chip">图标填充条</span>
           </div>
-          <div className="scene1-assessment-result-radar-layout">
-            <div className="scene1-assessment-result-radar-stage">
-              {radarMetrics.map((item, index) => (
-                <div
-                  key={item.label}
-                  className={`scene1-assessment-result-radar-metric scene1-assessment-result-radar-metric-${radarMetricPositions[index]}`}
-                >
-                  <strong>{item.label}</strong>
-                  <span>{`得分 ${item.score}`}</span>
-                </div>
-              ))}
-              <div className="scene1-assessment-result-radar-visual" aria-hidden="true">
-                <svg viewBox="0 0 220 220">
-                  <circle cx="110" cy="110" r="64" className="scene1-assessment-result-radar-ring" />
-                  <circle cx="110" cy="110" r="46" className="scene1-assessment-result-radar-ring" />
-                  <circle cx="110" cy="110" r="28" className="scene1-assessment-result-radar-ring" />
-                  <path
-                    d="M110 46L170.87 90.22L147.64 161.78L72.36 161.78L49.13 90.22Z"
-                    className="scene1-assessment-result-radar-grid"
-                  />
-                  <path d={radarPath} className="scene1-assessment-result-radar-fill" />
-                </svg>
-              </div>
-            </div>
-          </div>
+          <AssessmentResultPictorialBarCardV2 metrics={breakdownMetrics} />
         </div>
       </section>
 
@@ -1372,12 +1706,25 @@ function CompletionState({ answers }: { answers: Scene1AssessmentState['answers'
         <h3>重点关注</h3>
         <div className="scene1-assessment-result-focus-list">
           {highlightItems.map((item) => (
-            <div key={`${item.title}-${item.tag}`} className="scene1-assessment-result-focus-item">
+            <div
+              key={item.id}
+              className="scene1-assessment-result-focus-item"
+              data-testid={`scene1-assessment-result-focus-item-${item.id}`}
+            >
               <div className="scene1-assessment-result-focus-head">
                 <strong>{item.title}</strong>
                 <span className={`scene1-assessment-result-badge-mini ${item.tone}`}>{item.tag}</span>
               </div>
               <p>{item.body}</p>
+              {item.analysis ? (
+                <div
+                  className="scene1-assessment-result-focus-analysis"
+                  data-testid="scene1-assessment-result-focus-analysis"
+                >
+                  <span>原因分析</span>
+                  <p>{item.analysis}</p>
+                </div>
+              ) : null}
             </div>
           ))}
           {highlightItems.length === 0 ? (
@@ -1392,71 +1739,6 @@ function CompletionState({ answers }: { answers: Scene1AssessmentState['answers'
         </div>
       </section>
 
-      <section className="scene1-assessment-result-extension-grid">
-        <div className="scene1-assessment-result-extension-card">
-          <h3>原因分析</h3>
-          <div className="scene1-assessment-result-analysis-block">
-            <strong>{summary.interpretation.label}</strong>
-            <p>{kmiDecisionSummary}</p>
-          </div>
-          <div className="scene1-assessment-result-analysis-block">
-            <strong>{decisionSummary.boneHealth.title}</strong>
-            <p>{decisionSummary.boneHealth.rationale}</p>
-          </div>
-          <div className="scene1-assessment-result-analysis-block">
-            <strong>{decisionSummary.exercise.title}</strong>
-            <p>{decisionSummary.exercise.rationale}</p>
-          </div>
-        </div>
-
-        <div className="scene1-assessment-result-extension-card">
-          <h3>{decisionSummary.boneHealth.title}</h3>
-          <strong>{decisionSummary.boneHealth.label}</strong>
-          <p>{decisionSummary.boneHealth.summary}</p>
-          <div className="scene1-assessment-result-mini-actions">
-            {decisionSummary.boneHealth.actions.map((item) => (
-              <div key={item} className="scene1-assessment-result-mini-action">
-                {item}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="scene1-assessment-result-extension-card">
-          <h3>{decisionSummary.exercise.title}</h3>
-          <strong>{decisionSummary.exercise.label}</strong>
-          <p>{decisionSummary.exercise.summary}</p>
-          <div className="scene1-assessment-result-mini-actions">
-            {decisionSummary.exercise.actions.map((item) => (
-              <div key={item} className="scene1-assessment-result-mini-action">
-                {item}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="scene1-assessment-result-action-section">
-        <h3>接下来的行动指南</h3>
-        <div className="scene1-assessment-result-action-list">
-          <div className="scene1-assessment-result-action-card">
-            <strong>记录 14 天完整症状日记</strong>
-            <p>持续记录月经、睡眠、潮热与情绪，有助于判断症状波动和触发因素。</p>
-          </div>
-          <div className="scene1-assessment-result-action-card">
-            <strong>建议进一步医学评估</strong>
-            <p>如果症状已影响工作、睡眠或生活质量，建议与医生讨论更系统的管理方案。</p>
-          </div>
-          <div className="scene1-assessment-result-action-card">
-            <strong>骨健康与维生素D管理</strong>
-            <p>{decisionSummary.boneHealth.actions[0]}</p>
-          </div>
-          <div className="scene1-assessment-result-action-card">
-            <strong>运动方案按红黄绿灯执行</strong>
-            <p>{decisionSummary.exercise.actions[0]}</p>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
@@ -1505,53 +1787,77 @@ export function AssessmentStepRenderer({
   if (step.id === 1) {
     return (
       <div className="scene1-assessment-intro-layout">
-        <div className="scene1-assessment-stack">
-          <div className="scene1-assessment-hero-card">
-            <p className="scene1-assessment-kicker">个人健康洞察</p>
-            <h2 className="scene1-assessment-title">围绝经期评估</h2>
+        <div className="scene1-assessment-stack scene1-assessment-intro-stack">
+          <div className="scene1-assessment-step-head scene1-assessment-step-head-compact">
+            <h2 className="scene1-assessment-title">个人生理特征</h2>
             <p className="scene1-assessment-body-copy">
-              帮助了解当前是否存在围绝经期相关表现，并评估症状影响程度。该评估旨在辅助识别身体变化，为后续健康管理提供更清晰的参考。
+              这部分信息用于帮助判断年龄阶段与体征变化之间的关系。
             </p>
           </div>
 
-          <div className="scene1-assessment-intro-feature-grid">
-            <IntroFeatureCard
-              title="快速便捷"
-              body="预计耗时 3-5 分钟，重点覆盖基础信息、周期变化、症状表现与 KMI 评估。"
-            />
-            <IntroFeatureCard
-              title="健康参考"
-              body="结果用于健康管理参考，不能替代临床医生诊断，但能帮助您更早发现变化。"
-            />
-          </div>
+          <section className="scene1-assessment-block scene1-assessment-profile-card">
+            <div className="scene1-assessment-field-stack">
+              <ProfilePickerField
+                label="年龄"
+                value={formatProfileValue('age', state.answers.age)}
+                placeholder={profilePickerConfigMap.age.placeholder}
+                onOpen={() => openProfilePicker('age')}
+              />
 
-          <div className="scene1-assessment-intro-visual">
-            <div className="scene1-assessment-intro-visual-glow" aria-hidden="true" />
-            <p>“在变化中找到平衡，重新理解身体节律，也更从容地应对每一次波动。”</p>
-          </div>
-        </div>
+              <div className="scene1-assessment-two-col">
+                <ProfilePickerField
+                  label="身高"
+                  value={formatProfileValue('heightCm', state.answers.heightCm)}
+                  placeholder={profilePickerConfigMap.heightCm.placeholder}
+                  onOpen={() => openProfilePicker('heightCm')}
+                />
+                <ProfilePickerField
+                  label="体重"
+                  value={formatProfileValue('weightKg', state.answers.weightKg)}
+                  placeholder={profilePickerConfigMap.weightKg.placeholder}
+                  onOpen={() => openProfilePicker('weightKg')}
+                />
+              </div>
+            </div>
 
-        <div className="scene1-assessment-intro-side">
-          <div className="scene1-assessment-intro-panel">
-            <h3>评估须知</h3>
-            <IntroNoticeItem
-              title="隐私保护"
-              body="回答内容仅用于当前评估流程，个人敏感数据会以受保护方式展示和处理。"
-            />
-            <IntroNoticeItem
-              title="可继续完成"
-              body="当前流程支持前后切换查看内容，但关闭评估后会重置本轮填写状态。"
-            />
-            <div className="scene1-assessment-intro-disclaimer">
-              <strong>免责声明</strong>
-              <p>
-                本评估结果仅作健康管理参考，不构成医学诊断或治疗意见。如您存在明显异常出血、严重睡眠障碍或持续不适，请及时就医。
+            <div
+              className="scene1-assessment-profile-card-notes scene1-assessment-footnote"
+              data-testid="scene1-assessment-intro-panel"
+            >
+              <p className="scene1-assessment-footnote-body">
+                预计耗时 3-5 分钟，覆盖基础信息、周期变化、症状表现与 KMI 评估。
+              </p>
+              <p className="scene1-assessment-footnote-body">
+                结果用于健康管理参考，不能替代医生诊断，如存在异常出血或持续不适，请及时就医。
               </p>
             </div>
-            <div className="scene1-assessment-intro-lock">
-              <span>您的数据受到加密保护</span>
-            </div>
+
+            <InlineBanner
+              title="BMI 指数将结合身高和体重自动辅助判断"
+              body="这能帮助我们更完整地理解代谢负担与身体阶段变化之间的关系，但不会单独作为结论依据。"
+            />
+          </section>
+
+          <div
+            className="scene1-assessment-intro-lockline scene1-assessment-footnote scene1-assessment-intro-lockline-critical"
+            data-testid="scene1-assessment-intro-lockline"
+          >
+            <strong className="scene1-assessment-footnote-title">你的数据受到加密保护</strong>
+            <span className="scene1-assessment-footnote-body">回答内容仅用于本次评估流程，不会对外展示或传播</span>
           </div>
+
+          {profilePickerState ? (
+            <ProfilePickerSheet
+              label={profilePickerState.label}
+              options={profilePickerState.options}
+              value={profilePickerState.draftValue}
+              onSelect={(value) =>
+                setProfilePickerState((prev) => (prev ? { ...prev, draftValue: value } : prev))
+              }
+              onClose={closeProfilePicker}
+              onConfirm={confirmProfilePicker}
+            />
+          ) : null}
         </div>
       </div>
     );
@@ -1559,68 +1865,11 @@ export function AssessmentStepRenderer({
 
   if (step.id === 2) {
     return (
-      <div className="scene1-assessment-stack">
-        <h2 className="scene1-assessment-title">{step.title}</h2>
-        <p className="scene1-assessment-body-copy">{step.subtitle}</p>
-
-        <section className="scene1-assessment-block scene1-assessment-profile-card">
-          <div className="scene1-assessment-section-head">
-            <h3>个人生理特征</h3>
-            <p>这部分信息用于帮助判断年龄阶段与体征变化之间的关系。</p>
-          </div>
-
-          <div className="scene1-assessment-field-stack">
-            <ProfilePickerField
-              label="年龄"
-              value={formatProfileValue('age', state.answers.age)}
-              placeholder={profilePickerConfigMap.age.placeholder}
-              onOpen={() => openProfilePicker('age')}
-            />
-
-            <div className="scene1-assessment-two-col">
-              <ProfilePickerField
-                label="身高"
-                value={formatProfileValue('heightCm', state.answers.heightCm)}
-                placeholder={profilePickerConfigMap.heightCm.placeholder}
-                onOpen={() => openProfilePicker('heightCm')}
-              />
-              <ProfilePickerField
-                label="体重"
-                value={formatProfileValue('weightKg', state.answers.weightKg)}
-                placeholder={profilePickerConfigMap.weightKg.placeholder}
-                onOpen={() => openProfilePicker('weightKg')}
-              />
-            </div>
-          </div>
-        </section>
-
-        <InlineBanner
-          title="BMI 指数将结合身高和体重自动辅助判断"
-          body="这能帮助我们更完整地理解代谢负担与身体阶段变化之间的关系，但不会单独作为结论依据。"
-        />
-
-        {profilePickerState ? (
-          <ProfilePickerSheet
-            label={profilePickerState.label}
-            options={profilePickerState.options}
-            value={profilePickerState.draftValue}
-            onSelect={(value) =>
-              setProfilePickerState((prev) => (prev ? { ...prev, draftValue: value } : prev))
-            }
-            onClose={closeProfilePicker}
-            onConfirm={confirmProfilePicker}
-          />
-        ) : null}
-      </div>
-    );
-  }
-
-  if (step.id === 3) {
-    return (
-      <div className="scene1-assessment-stack">
-        <h2 className="scene1-assessment-title">{step.title}</h2>
-        <p className="scene1-assessment-body-copy">{step.subtitle}</p>
-        <p className="scene1-assessment-helper scene1-assessment-step-helper">（记录数据读取，无记录数据填写）</p>
+      <div className="scene1-assessment-stack scene1-assessment-stack-cycle">
+        <div className="scene1-assessment-step-head scene1-assessment-step-head-compact">
+          <h2 className="scene1-assessment-title">{step.title}</h2>
+          <p className="scene1-assessment-body-copy">{step.subtitle}</p>
+        </div>
 
         <SupportPanel
           kicker="月经周期识别"
@@ -1671,7 +1920,7 @@ export function AssessmentStepRenderer({
     );
   }
 
-  if (step.id === 4) {
+  if (step.id === 3) {
     return (
       <div className="scene1-assessment-stack">
         <h2 className="scene1-assessment-title">{step.title}</h2>
@@ -1716,19 +1965,12 @@ export function AssessmentStepRenderer({
     );
   }
 
-  if (step.id === 5) {
+  if (step.id === 4) {
     return (
       <div className="scene1-assessment-stack">
-        <h2 className="scene1-assessment-title">{step.title}</h2>
         <p className="scene1-assessment-body-copy">{step.subtitle}</p>
 
-        <InlineBanner
-          title="请根据最近1个月的实际感受进行选择"
-          body="KMI 问卷第一部分会先从较常见的身体与情绪变化开始，帮助判断围绝经期症状强度。"
-        />
-
-        <KmiGroup
-          title="KMI 问卷第一部分"
+        <KmiQuestionRows
           prompts={kmiSetOnePrompts}
           options={step.options ?? {}}
           answers={state.answers}
@@ -1736,7 +1978,7 @@ export function AssessmentStepRenderer({
         />
 
         <SupportPanel
-          kicker="身心调节"
+          kicker=""
           title="您的身体正在经历变化"
           body="这些题目不仅是在记录症状，也在帮助您更具体地看见变化发生在哪些方面。"
         />
@@ -1746,40 +1988,22 @@ export function AssessmentStepRenderer({
 
   return (
     <div className="scene1-assessment-stack">
-      <h2 className="scene1-assessment-title">{step.title}</h2>
       <p className="scene1-assessment-body-copy">{step.subtitle}</p>
 
-      <KmiGroup
-        title="身体症状"
-        prompts={kmiSetTwoPrompts.slice(0, 3)}
+      <KmiQuestionRows
+        prompts={kmiSetTwoPrompts}
         options={step.options ?? {}}
         answers={state.answers}
         onAnswer={onAnswer}
       />
 
-      <KmiGroup
-        title="神经与感官"
-        prompts={kmiSetTwoPrompts.slice(3, 5)}
-        options={step.options ?? {}}
-        answers={state.answers}
-        onAnswer={onAnswer}
-      />
-
-      <section className="scene1-assessment-split-layout">
-        <KmiGroup
-          title="生活质量"
-          prompts={kmiSetTwoPrompts.slice(5)}
-          options={step.options ?? {}}
-          answers={state.answers}
-          onAnswer={onAnswer}
-        />
-
-        <div className="scene1-assessment-side-card">
-          <span className="scene1-assessment-side-badge">隐私保护</span>
-          <h3>数据高度加密</h3>
-          <p>这部分会结合生活质量变化一起评估，但所有输入内容都仅在本次评估流程中使用。</p>
-        </div>
-      </section>
+      <div
+        className="scene1-assessment-side-card scene1-assessment-footnote"
+        data-testid="scene1-assessment-side-card"
+      >
+        <h3 className="scene1-assessment-footnote-title">数据高度加密</h3>
+        <p className="scene1-assessment-footnote-body">这部分会结合生活质量变化一起评估，但所有输入内容都仅在本次评估流程中使用。</p>
+      </div>
     </div>
   );
 }

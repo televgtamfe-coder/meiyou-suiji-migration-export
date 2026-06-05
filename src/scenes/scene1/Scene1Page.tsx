@@ -974,7 +974,12 @@ export function Scene1Page({ routeVariant = 'default' }: Scene1PageProps) {
                 </button>
               ))}
             </div>
-            <button type="button" className="prototype-analysis-entry" aria-label={"\u5206\u6790"}>
+            <button
+              type="button"
+              className="prototype-analysis-entry"
+              aria-label={"\u5206\u6790"}
+              onClick={() => navigate('/scene1-assessment-result')}
+            >
               {"\u5206\u6790"}
             </button>
           </div>
