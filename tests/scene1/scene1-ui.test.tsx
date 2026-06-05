@@ -81,6 +81,96 @@ describe('scene1 ui', () => {
     expect(analysisEntry).toHaveTextContent(/^\u5206\u6790$/);
   });
 
+  it('inserts the duplicated pregnancy tools card below the period row on the scene1 home route', () => {
+    render(
+      <MemoryRouter initialEntries={['/scene1-home']}>
+        <AppRouter />
+      </MemoryRouter>,
+    );
+
+    const periodRow = screen.getByTestId('scene1-home-period-row');
+    const homeToolsCard = screen.getByTestId('scene1-home-pregnancy-tools-card');
+    const communityCard = screen.getByTestId('scene1-home-community-card');
+
+    expect(within(homeToolsCard).getAllByRole('button')).toHaveLength(10);
+    expect(periodRow.compareDocumentPosition(homeToolsCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(homeToolsCard.compareDocumentPosition(communityCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('renames the homepage food tool to bone assessment and navigates to the questionnaire', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/scene1-home']}>
+        <AppRouter />
+      </MemoryRouter>,
+    );
+
+    const homeToolsCard = screen.getByTestId('scene1-home-pregnancy-tools-card');
+    const boneEntry = within(homeToolsCard).getByRole('button', { name: '骨钙测评' });
+
+    await user.click(boneEntry);
+
+    expect(screen.getByTestId('scene1-bone-assessment-route-shell')).toBeInTheDocument();
+  });
+
+  it('replaces the homepage checkup entry with 运动能力评估 and links it to the questionnaire', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/scene1-home']}>
+        <AppRouter />
+      </MemoryRouter>,
+    );
+
+    const homeToolsCard = screen.getByTestId('scene1-home-pregnancy-tools-card');
+    const exerciseEntry = within(homeToolsCard).getByRole('button', { name: '运动能力评估' });
+
+    expect(within(homeToolsCard).queryByRole('button', { name: '产检时间表' })).not.toBeInTheDocument();
+
+    await user.click(exerciseEntry);
+
+    expect(screen.getByTestId('scene1-exercise-assessment-route-shell')).toBeInTheDocument();
+  });
+
+  it('replaces the homepage hcg entry with PHQ-9 抑郁评估 and links it to the questionnaire', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/scene1-home']}>
+        <AppRouter />
+      </MemoryRouter>,
+    );
+
+    const homeToolsCard = screen.getByTestId('scene1-home-pregnancy-tools-card');
+    const phq9Entry = within(homeToolsCard).getByRole('button', { name: 'PHQ-9 抑郁评估' });
+
+    expect(within(homeToolsCard).queryByRole('button', { name: 'hCG查询' })).not.toBeInTheDocument();
+
+    await user.click(phq9Entry);
+
+    expect(screen.getByTestId('scene1-phq9-assessment-route-shell')).toBeInTheDocument();
+  });
+
+  it('replaces the homepage weight entry with GAD-7 焦虑评估 and links it to the questionnaire', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/scene1-home']}>
+        <AppRouter />
+      </MemoryRouter>,
+    );
+
+    const homeToolsCard = screen.getByTestId('scene1-home-pregnancy-tools-card');
+    const gad7Entry = within(homeToolsCard).getByRole('button', { name: 'GAD-7 焦虑评估' });
+
+    expect(within(homeToolsCard).queryByRole('button', { name: '孕期体重' })).not.toBeInTheDocument();
+
+    await user.click(gad7Entry);
+
+    expect(screen.getByTestId('scene1-gad7-assessment-route-shell')).toBeInTheDocument();
+  });
+
   it('renders the exit button on the perimenopause route', () => {
     render(
       <MemoryRouter initialEntries={['/scene1-perimenopause']}>
@@ -977,6 +1067,16 @@ describe('scene1 ui', () => {
     expect(screen.getByTestId('scene1-pregnancy-services-grid')).toBeInTheDocument();
     expect(screen.getByTestId('scene1-pregnancy-article-card')).toBeInTheDocument();
     expect(screen.getByTestId('scene1-pregnancy-checkin-card')).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('scene1-pregnancy-quick-grid')).getByRole('button', {
+        name: '运动能力评估',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('scene1-pregnancy-quick-grid')).queryByRole('button', {
+        name: '产检时间表',
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it('navigates to the parenting page from the scene1 mode switch', async () => {

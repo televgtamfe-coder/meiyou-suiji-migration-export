@@ -683,6 +683,14 @@ textarea {
   margin: 0;
 }
 
+.scene1-home-pregnancy-tools-card {
+  min-height: 0;
+  border: 1px solid #e5e4e7;
+  border-radius: 8px;
+  box-shadow: none;
+  padding: 8px 0 10px;
+}
+
 .record-list-row-shell-expanded {
   background: #fff;
   border-radius: 16px;
@@ -5001,6 +5009,242 @@ textarea {
   color: var(--my-text-secondary);
 }
 
+.scene1-bone-assessment-page,
+.scene1-exercise-assessment-page {
+  background: linear-gradient(180deg, #fff8fb 0%, #f6eff3 100%);
+}
+
+.scene1-bone-assessment-overview,
+.scene1-exercise-assessment-overview {
+  background: linear-gradient(180deg, #fff9fc 0%, #ffffff 100%);
+}
+
+.scene1-bone-assessment-carryover {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.scene1-bone-assessment-carryover .scene1-assessment-chip {
+  white-space: nowrap;
+}
+
+.scene1-bone-assessment-result-shell .scene1-assessment-body,
+.scene1-exercise-assessment-result-shell .scene1-assessment-body,
+.scene1-phq9-assessment-result-shell .scene1-assessment-body,
+.scene1-gad7-assessment-result-shell .scene1-assessment-body {
+  padding-bottom: 104px;
+}
+
+.scene1-bone-assessment-result-page,
+.scene1-exercise-assessment-result-page,
+.scene1-phq9-assessment-result-page,
+.scene1-gad7-assessment-result-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.scene1-bone-assessment-result-card,
+.scene1-exercise-assessment-result-card,
+.scene1-phq9-assessment-result-card,
+.scene1-gad7-assessment-result-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, #ffffff 100%);
+}
+
+.scene1-bone-assessment-result-card-head,
+.scene1-exercise-assessment-result-card-head,
+.scene1-phq9-assessment-result-card-head,
+.scene1-gad7-assessment-result-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scene1-bone-assessment-result-card-head > div,
+.scene1-exercise-assessment-result-card-head > div,
+.scene1-phq9-assessment-result-card-head > div,
+.scene1-gad7-assessment-result-card-head > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scene1-bone-assessment-result-card-head h2,
+.scene1-exercise-assessment-result-card-head h2,
+.scene1-phq9-assessment-result-card-head h2,
+.scene1-gad7-assessment-result-card-head h2 {
+  font-size: 20px;
+  line-height: 1.36;
+  font-weight: 600;
+  color: #2f2430;
+}
+
+.scene1-bone-assessment-result-insight,
+.scene1-exercise-assessment-result-insight,
+.scene1-phq9-assessment-result-insight,
+.scene1-gad7-assessment-result-insight {
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: #5d4752;
+}
+
+.scene1-bone-assessment-result-card-head p,
+.scene1-exercise-assessment-result-card-head p,
+.scene1-phq9-assessment-result-card-head p,
+.scene1-gad7-assessment-result-card-head p {
+  font-size: 13px;
+  line-height: 1.65;
+  color: #7a616c;
+}
+
+.scene1-bone-assessment-result-copy,
+.scene1-exercise-assessment-result-copy,
+.scene1-phq9-assessment-result-copy,
+.scene1-gad7-assessment-result-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scene1-bone-assessment-result-copy p,
+.scene1-exercise-assessment-result-copy p,
+.scene1-phq9-assessment-result-copy p,
+.scene1-gad7-assessment-result-copy p {
+  font-size: 13px;
+  line-height: 1.65;
+  color: #7a616c;
+}
+
+.scene1-bone-assessment-result-action,
+.scene1-exercise-assessment-result-action,
+.scene1-phq9-assessment-result-action,
+.scene1-gad7-assessment-result-action {
+  color: #ff4d88;
+  font-weight: 600;
+}
+
+.scene1-bone-assessment-result-metrics,
+.scene1-exercise-assessment-result-metrics,
+.scene1-phq9-assessment-result-metrics,
+.scene1-gad7-assessment-result-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.scene1-bone-assessment-result-metric,
+.scene1-exercise-assessment-result-metric,
+.scene1-phq9-assessment-result-metric,
+.scene1-gad7-assessment-result-metric {
+  min-width: 0;
+  border-radius: 18px;
+  background: #fff6fa;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid rgba(255, 77, 136, 0.08);
+}
+
+.scene1-bone-assessment-result-metric span,
+.scene1-exercise-assessment-result-metric span,
+.scene1-phq9-assessment-result-metric span,
+.scene1-gad7-assessment-result-metric span {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #9c7f8c;
+}
+
+.scene1-bone-assessment-result-metric strong,
+.scene1-exercise-assessment-result-metric strong,
+.scene1-phq9-assessment-result-metric strong,
+.scene1-gad7-assessment-result-metric strong {
+  font-size: 20px;
+  line-height: 1.08;
+  font-weight: 700;
+  color: #ff4d88;
+}
+
+.scene1-bone-assessment-result-metric em,
+.scene1-exercise-assessment-result-metric em,
+.scene1-phq9-assessment-result-metric em,
+.scene1-gad7-assessment-result-metric em {
+  font-style: normal;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #7a616c;
+}
+
+.scene1-bone-assessment-result-section,
+.scene1-exercise-assessment-result-section,
+.scene1-phq9-assessment-result-section,
+.scene1-gad7-assessment-result-section {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 77, 136, 0.08);
+}
+
+.scene1-bone-assessment-result-section h3,
+.scene1-exercise-assessment-result-section h3,
+.scene1-phq9-assessment-result-section h3,
+.scene1-gad7-assessment-result-section h3 {
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: #5d4752;
+  margin-bottom: 8px;
+}
+
+.scene1-bone-assessment-result-list,
+.scene1-exercise-assessment-result-list,
+.scene1-phq9-assessment-result-list,
+.scene1-gad7-assessment-result-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 18px;
+}
+
+.scene1-bone-assessment-result-list li,
+.scene1-exercise-assessment-result-list li,
+.scene1-phq9-assessment-result-list li,
+.scene1-gad7-assessment-result-list li {
+  font-size: 13px;
+  line-height: 1.62;
+  color: #7a616c;
+}
+
+.scene1-phq9-assessment-result-risk {
+  margin-top: 14px;
+  padding: 14px 14px 13px;
+  border-radius: 18px;
+  background: rgba(252, 134, 50, 0.1);
+  border: 1px solid rgba(252, 134, 50, 0.16);
+}
+
+.scene1-phq9-assessment-result-risk h3 {
+  margin-bottom: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: #9a4f1a;
+}
+
+.scene1-phq9-assessment-result-risk p {
+  font-size: 13px;
+  line-height: 1.62;
+  color: #7b583d;
+}
+
+.scene1-bone-assessment-result-note {
+  padding: 0 10px 2px;
+  text-align: center;
+}
+
 .scene2-shell .scene2-demo {
   padding-bottom: 217px;
 }
@@ -6012,6 +6256,12 @@ textarea {
   text-align: center;
   color: #323232;
   white-space: nowrap;
+}
+
+.scene1-pregnancy-tool-label-multiline {
+  min-height: 30px;
+  line-height: 1.18;
+  white-space: normal;
 }
 
 .scene1-pregnancy-article-card {

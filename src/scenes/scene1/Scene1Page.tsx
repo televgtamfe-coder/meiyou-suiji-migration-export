@@ -20,6 +20,7 @@ import { StatusBar } from './components/StatusBar';
 import { getKmiScoreSummary, pickCompletedKmiAnswers } from './kmiScoring';
 import { writeScene1KmiScore } from './kmiScoreStorage';
 import { resolvePerimenopauseSymptomIcon } from './perimenopauseSymptomItemIcons';
+import { writeScene1HealthProfile } from './bone-assessment/boneAssessmentStorage';
 import {
   PerimenopauseSymptomItemId,
   perimenopauseSymptomSections,
@@ -913,6 +914,10 @@ export function Scene1Page({ routeVariant = 'default' }: Scene1PageProps) {
   const isPerimenopauseRoute = routeVariant === 'perimenopause';
 
   function handleAssessmentAnswer(field: AssessmentFieldKey, value: string) {
+    if (field === 'age' || field === 'heightCm' || field === 'weightKg') {
+      writeScene1HealthProfile({ [field]: value });
+    }
+
     setAssessmentState((prev) => answerAssessmentField(prev, field, value));
   }
 

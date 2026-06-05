@@ -2,6 +2,7 @@ import { readScene1KmiScore } from './kmiScoreStorage';
 import { scene1HomeFeeds } from './scene1HomeFeeds';
 import { Scene1BottomTabBar } from './components/Scene1BottomTabBar';
 import { PeriodDropletIcon } from './components/PeriodDropletIcon';
+import { Scene1PregnancyToolsCard } from './components/Scene1PregnancyToolsCard';
 import { StatusBar } from './components/StatusBar';
 
 export function Scene1HomePage() {
@@ -73,6 +74,12 @@ export function Scene1HomePage() {
               </button>
             </div>
           </section>
+
+          <Scene1PregnancyToolsCard
+            className="scene1-home-pregnancy-tools-card"
+            testId="scene1-home-pregnancy-tools-card"
+          />
+
           <section className="scene1-home-feed-list" data-testid="scene1-home-feed-list">
             {scene1HomeFeeds.map((feed) => {
             const isPrimaryFeed = feed.id === 'feed-primary';

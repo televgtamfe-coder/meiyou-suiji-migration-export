@@ -6,6 +6,14 @@ import { Scene1MyPage } from '../scenes/scene1/Scene1MyPage';
 import { Scene1PrepPage } from '../scenes/scene1/Scene1PrepPage';
 import { Scene1ParentingPage } from '../scenes/scene1/Scene1ParentingPage';
 import { Scene1PregnancyPage } from '../scenes/scene1/Scene1PregnancyPage';
+import { Scene1BoneAssessmentPage } from '../scenes/scene1/Scene1BoneAssessmentPage';
+import { Scene1BoneAssessmentResultPreviewPage } from '../scenes/scene1/Scene1BoneAssessmentResultPreviewPage';
+import { Scene1ExerciseAssessmentPage } from '../scenes/scene1/Scene1ExerciseAssessmentPage';
+import { Scene1ExerciseAssessmentResultPreviewPage } from '../scenes/scene1/Scene1ExerciseAssessmentResultPreviewPage';
+import { Scene1Phq9AssessmentPage } from '../scenes/scene1/Scene1Phq9AssessmentPage';
+import { Scene1Phq9AssessmentResultPreviewPage } from '../scenes/scene1/Scene1Phq9AssessmentResultPreviewPage';
+import { Scene1Gad7AssessmentPage } from '../scenes/scene1/Scene1Gad7AssessmentPage';
+import { Scene1Gad7AssessmentResultPreviewPage } from '../scenes/scene1/Scene1Gad7AssessmentResultPreviewPage';
 import { Scene1AssessmentStageComparePage } from '../scenes/scene1/Scene1AssessmentStageComparePage';
 import { Scene1AssessmentResultPreviewPage } from '../scenes/scene1/Scene1AssessmentResultPreviewPage';
 import { RecordLandingPage } from '../scenes/record-shell/RecordLandingPage';
@@ -94,6 +102,86 @@ function ScenePrepRouteShell() {
   );
 }
 
+function SceneBoneAssessmentRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1BoneAssessmentPage />
+      </div>
+    </div>
+  );
+}
+
+function SceneBoneAssessmentResultRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1BoneAssessmentResultPreviewPage />
+      </div>
+    </div>
+  );
+}
+
+function SceneExerciseAssessmentRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1ExerciseAssessmentPage />
+      </div>
+    </div>
+  );
+}
+
+function SceneExerciseAssessmentResultRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1ExerciseAssessmentResultPreviewPage />
+      </div>
+    </div>
+  );
+}
+
+function ScenePhq9AssessmentRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1Phq9AssessmentPage />
+      </div>
+    </div>
+  );
+}
+
+function ScenePhq9AssessmentResultRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1Phq9AssessmentResultPreviewPage />
+      </div>
+    </div>
+  );
+}
+
+function SceneGad7AssessmentRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1Gad7AssessmentPage />
+      </div>
+    </div>
+  );
+}
+
+function SceneGad7AssessmentResultRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1Gad7AssessmentResultPreviewPage />
+      </div>
+    </div>
+  );
+}
+
 function KegelReviewRouteShell() {
   return (
     <div className="app-root">
@@ -117,6 +205,23 @@ function KegelTrainingRouteShell() {
 export function AppRouter() {
   return (
     <Routes>
+      <Route path="/scene1-bone-assessment" element={<SceneBoneAssessmentRouteShell />} />
+      <Route path="/scene1-bone-assessment-result" element={<SceneBoneAssessmentResultRouteShell />} />
+      <Route path="/scene1-exercise-assessment" element={<SceneExerciseAssessmentRouteShell />} />
+      <Route
+        path="/scene1-exercise-assessment-result"
+        element={<SceneExerciseAssessmentResultRouteShell />}
+      />
+      <Route path="/scene1-phq9-assessment" element={<ScenePhq9AssessmentRouteShell />} />
+      <Route
+        path="/scene1-phq9-assessment-result"
+        element={<ScenePhq9AssessmentResultRouteShell />}
+      />
+      <Route path="/scene1-gad7-assessment" element={<SceneGad7AssessmentRouteShell />} />
+      <Route
+        path="/scene1-gad7-assessment-result"
+        element={<SceneGad7AssessmentResultRouteShell />}
+      />
       <Route path="/scene1-assessment-result" element={<SceneAssessmentResultRouteShell />} />
       <Route path="/scene1-assessment-stage-compare" element={<SceneAssessmentStageCompareRouteShell />} />
       <Route path="/scene1-prep" element={<ScenePrepRouteShell />} />

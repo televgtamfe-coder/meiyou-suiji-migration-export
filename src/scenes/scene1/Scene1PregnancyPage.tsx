@@ -20,7 +20,7 @@ const pregnancyDates = [
 const pregnancyQuickActions = [
   { key: 'doctor', label: '问医生' },
   { key: 'food', label: '能不能吃' },
-  { key: 'checkup', label: '产检时间表' },
+  { key: 'checkup', label: '运动能力评估' },
   { key: 'hcg', label: 'hCG查询' },
   { key: 'weight', label: '孕期体重' },
 ] as const;
