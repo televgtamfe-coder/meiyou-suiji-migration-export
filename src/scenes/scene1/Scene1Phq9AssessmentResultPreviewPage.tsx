@@ -1,24 +1,20 @@
-import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { StatusBar } from './components/StatusBar';
 import { Phq9AssessmentResult } from './phq9-assessment/Phq9AssessmentResult';
 import {
   createPhq9AssessmentAnswers,
-  createSamplePhq9AssessmentAnswers,
   getPhq9AssessmentResultSummary,
 } from './phq9-assessment/phq9AssessmentScoring';
 import { readPhq9AssessmentLatest } from './phq9-assessment/phq9AssessmentStorage';
 
 export function Scene1Phq9AssessmentResultPreviewPage() {
+  const latest = readPhq9AssessmentLatest();
   const navigate = useNavigate();
-  const summary = useMemo(() => {
-    const latest = readPhq9AssessmentLatest();
-    const answers = latest?.answers
-      ? createPhq9AssessmentAnswers(latest.answers)
-      : createSamplePhq9AssessmentAnswers();
+  if (!latest) {
+    return <Navigate to="/scene1-phq9-assessment" replace />;
+  }
 
-    return getPhq9AssessmentResultSummary(answers);
-  }, []);
+  const summary = getPhq9AssessmentResultSummary(createPhq9AssessmentAnswers(latest.answers));
 
   return (
     <div

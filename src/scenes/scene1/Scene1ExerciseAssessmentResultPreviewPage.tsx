@@ -1,24 +1,20 @@
-import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { StatusBar } from './components/StatusBar';
 import { ExerciseAssessmentResult } from './exercise-assessment/ExerciseAssessmentResult';
 import {
   createExerciseAssessmentAnswers,
-  createSampleExerciseAssessmentAnswers,
   getExerciseAssessmentResultSummary,
 } from './exercise-assessment/exerciseAssessmentScoring';
 import { readExerciseAssessmentLatest } from './exercise-assessment/exerciseAssessmentStorage';
 
 export function Scene1ExerciseAssessmentResultPreviewPage() {
+  const latest = readExerciseAssessmentLatest();
   const navigate = useNavigate();
-  const summary = useMemo(() => {
-    const latest = readExerciseAssessmentLatest();
-    const answers = latest?.answers
-      ? createExerciseAssessmentAnswers(latest.answers)
-      : createSampleExerciseAssessmentAnswers();
+  if (!latest) {
+    return <Navigate to="/scene1-exercise-assessment" replace />;
+  }
 
-    return getExerciseAssessmentResultSummary(answers);
-  }, []);
+  const summary = getExerciseAssessmentResultSummary(createExerciseAssessmentAnswers(latest.answers));
 
   return (
     <div

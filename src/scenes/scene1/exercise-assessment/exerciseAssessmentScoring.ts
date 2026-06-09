@@ -42,18 +42,11 @@ function getLevel(
     return 'ready';
   }
 
-  if (
-    positiveFields.length === 1 &&
-    positiveFields[0] === 'exerciseBoneJointSoftTissueIssue'
-  ) {
-    return 'caution';
-  }
-
-  if (criticalAlertFields.length > 0 || positiveFields.length >= 3) {
+  if (criticalAlertFields.length > 0 || positiveFields.length > 0) {
     return 'restricted';
   }
 
-  return 'consult';
+  return 'ready';
 }
 
 function getDetail(level: ExerciseAssessmentResultLevel, positiveCount: number, criticalAlerts: string[]) {

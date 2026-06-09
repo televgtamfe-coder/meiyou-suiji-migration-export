@@ -1,24 +1,20 @@
-import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { StatusBar } from './components/StatusBar';
 import { BoneAssessmentResult } from './bone-assessment/BoneAssessmentResult';
 import {
   createBoneAssessmentAnswers,
-  createSampleBoneAssessmentAnswers,
   getBoneAssessmentResultSummary,
 } from './bone-assessment/boneAssessmentScoring';
 import { readBoneAssessmentLatest } from './bone-assessment/boneAssessmentStorage';
 
 export function Scene1BoneAssessmentResultPreviewPage() {
+  const latest = readBoneAssessmentLatest();
   const navigate = useNavigate();
-  const summary = useMemo(() => {
-    const latest = readBoneAssessmentLatest();
-    const answers = latest?.answers
-      ? createBoneAssessmentAnswers(latest.answers)
-      : createSampleBoneAssessmentAnswers();
+  if (!latest) {
+    return <Navigate to="/scene1-bone-assessment" replace />;
+  }
 
-    return getBoneAssessmentResultSummary(answers);
-  }, []);
+  const summary = getBoneAssessmentResultSummary(createBoneAssessmentAnswers(latest.answers));
 
   return (
     <div

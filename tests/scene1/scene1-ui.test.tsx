@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -6,6 +6,7 @@ import { AppRouter } from '../../src/app/router';
 import { AssessmentStepRenderer } from '../../src/scenes/scene1/components/AssessmentStepRenderer';
 import { PerimenopauseAssessmentShell } from '../../src/scenes/scene1/components/PerimenopauseAssessmentShell';
 import { createAssessmentStateWithoutEntry } from '../../src/scenes/scene1/assessmentState';
+import { SCENE1_ASSESSMENT_LATEST_STORAGE_KEY } from '../../src/scenes/scene1/assessmentResultStorage';
 
 function createCompletedAssessmentState() {
   const baseState = createAssessmentStateWithoutEntry();
@@ -35,7 +36,21 @@ function createCompletedAssessmentState() {
   };
 }
 
+function seedLatestAssessmentResult() {
+  window.localStorage.setItem(
+    SCENE1_ASSESSMENT_LATEST_STORAGE_KEY,
+    JSON.stringify({
+      answers: createCompletedAssessmentState().answers,
+      completedAt: '2026-06-08T10:00:00.000Z',
+    }),
+  );
+}
+
 describe('scene1 ui', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   it('renders the calendar-first scene1 chrome', async () => {
     const user = userEvent.setup();
 
@@ -255,6 +270,14 @@ describe('scene1 ui', () => {
   });
 
   it('renders the assessment result preview route shell', () => {
+    window.localStorage.setItem(
+      SCENE1_ASSESSMENT_LATEST_STORAGE_KEY,
+      JSON.stringify({
+        answers: createCompletedAssessmentState().answers,
+        completedAt: '2026-06-08T10:00:00.000Z',
+      }),
+    );
+
     render(
       <MemoryRouter initialEntries={['/scene1-assessment-result']}>
         <AppRouter />
@@ -540,6 +563,8 @@ describe('scene1 ui', () => {
   });
 
   it('appends stage introduction and encouragement copy under the clock summary', () => {
+    seedLatestAssessmentResult();
+
     render(
       <MemoryRouter initialEntries={['/scene1-assessment-result']}>
         <AppRouter />
@@ -568,6 +593,8 @@ describe('scene1 ui', () => {
   });
 
   it('renames the result modules and applies the centered module heading style', () => {
+    seedLatestAssessmentResult();
+
     const { container } = render(
       <MemoryRouter initialEntries={['/scene1-assessment-result']}>
         <AppRouter />
@@ -581,6 +608,8 @@ describe('scene1 ui', () => {
   });
 
   it('places the KMI score block under the health score gauge inside the left overview card', () => {
+    seedLatestAssessmentResult();
+
     render(
       <MemoryRouter initialEntries={['/scene1-assessment-result']}>
         <AppRouter />
@@ -599,6 +628,8 @@ describe('scene1 ui', () => {
   });
 
   it('groups the right-side overview tags and cycle summary into a tighter bottom block', () => {
+    seedLatestAssessmentResult();
+
     render(
       <MemoryRouter initialEntries={['/scene1-assessment-result']}>
         <AppRouter />
@@ -709,6 +740,8 @@ describe('scene1 ui', () => {
   });
 
   it('removes the old result hero strip and action guide block from the assessment result page', () => {
+    seedLatestAssessmentResult();
+
     render(
       <MemoryRouter initialEntries={['/scene1-assessment-result']}>
         <AppRouter />
@@ -724,6 +757,7 @@ describe('scene1 ui', () => {
 
   it('navigates to the assessment result preview from the scene1 analysis entry', async () => {
     const user = userEvent.setup();
+    seedLatestAssessmentResult();
 
     render(
       <MemoryRouter initialEntries={['/scene1']}>

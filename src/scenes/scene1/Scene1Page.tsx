@@ -19,6 +19,7 @@ import { FloatingAnalysisNotice } from './components/FloatingAnalysisNotice';
 import { StatusBar } from './components/StatusBar';
 import { getKmiScoreSummary, pickCompletedKmiAnswers } from './kmiScoring';
 import { writeScene1KmiScore } from './kmiScoreStorage';
+import { writeScene1AssessmentLatest } from './assessmentResultStorage';
 import { resolvePerimenopauseSymptomIcon } from './perimenopauseSymptomItemIcons';
 import { writeScene1HealthProfile } from './bone-assessment/boneAssessmentStorage';
 import {
@@ -923,6 +924,10 @@ export function Scene1Page({ routeVariant = 'default' }: Scene1PageProps) {
 
   function handleAssessmentStateChange(nextState: Scene1AssessmentState) {
     if (nextState.completed) {
+      writeScene1AssessmentLatest({
+        answers: nextState.answers,
+        completedAt: new Date().toISOString(),
+      });
       const summary = getKmiScoreSummary(pickCompletedKmiAnswers(nextState.answers));
       writeScene1KmiScore(summary.total);
     }

@@ -14,9 +14,9 @@ const pregnancyQuickActions = [
 ] as const;
 
 const pregnancyServiceActions = [
-  { key: 'skincare', label: '\u5b55\u5988\u62a4\u80a4' },
-  { key: 'nanny', label: '\u6708\u5ac2\u62a5\u4ef7' },
-  { key: 'journal', label: '\u5b9d\u5b9d\u8bb0' },
+  { key: 'skincare', label: 'MRS \u8bc4\u4f30' },
+  { key: 'nanny', label: 'PSQI \u7761\u7720' },
+  { key: 'journal', label: 'ICIQ \u5c3f\u5931\u7981' },
   { key: 'group', label: '\u540c\u57ce\u5b55\u5988\u7fa4' },
   { key: 'action', label: '\u80fd\u4e0d\u80fd\u505a' },
 ] as const;
@@ -318,7 +318,18 @@ export function Scene1PregnancyToolsCard({
             key={item.key}
             actionKey={item.key}
             label={item.label}
-            onClick={item.key === 'action' ? () => navigate('/scene1-exercise-assessment') : undefined}
+            multilineLabel={item.key === 'skincare' || item.key === 'nanny' || item.key === 'journal'}
+            onClick={
+              item.key === 'skincare'
+                ? () => navigate('/scene1-mrs-assessment')
+                : item.key === 'nanny'
+                  ? () => navigate('/scene1-psqi-assessment')
+                  : item.key === 'journal'
+                    ? () => navigate('/scene1-iciq-assessment')
+                    : item.key === 'action'
+                      ? () => navigate('/scene1-exercise-assessment')
+                      : undefined
+            }
           />
         ))}
       </div>

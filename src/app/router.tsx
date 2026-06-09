@@ -14,6 +14,12 @@ import { Scene1Phq9AssessmentPage } from '../scenes/scene1/Scene1Phq9AssessmentP
 import { Scene1Phq9AssessmentResultPreviewPage } from '../scenes/scene1/Scene1Phq9AssessmentResultPreviewPage';
 import { Scene1Gad7AssessmentPage } from '../scenes/scene1/Scene1Gad7AssessmentPage';
 import { Scene1Gad7AssessmentResultPreviewPage } from '../scenes/scene1/Scene1Gad7AssessmentResultPreviewPage';
+import { Scene1MrsAssessmentPage } from '../scenes/scene1/Scene1MrsAssessmentPage';
+import { Scene1MrsAssessmentResultPreviewPage } from '../scenes/scene1/Scene1MrsAssessmentResultPreviewPage';
+import { Scene1PsqiAssessmentPage } from '../scenes/scene1/Scene1PsqiAssessmentPage';
+import { Scene1PsqiAssessmentResultPreviewPage } from '../scenes/scene1/Scene1PsqiAssessmentResultPreviewPage';
+import { Scene1IciqAssessmentPage } from '../scenes/scene1/Scene1IciqAssessmentPage';
+import { Scene1IciqAssessmentResultPreviewPage } from '../scenes/scene1/Scene1IciqAssessmentResultPreviewPage';
 import { Scene1AssessmentStageComparePage } from '../scenes/scene1/Scene1AssessmentStageComparePage';
 import { Scene1AssessmentResultPreviewPage } from '../scenes/scene1/Scene1AssessmentResultPreviewPage';
 import { RecordLandingPage } from '../scenes/record-shell/RecordLandingPage';
@@ -182,6 +188,66 @@ function SceneGad7AssessmentResultRouteShell() {
   );
 }
 
+function SceneMrsAssessmentRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1MrsAssessmentPage />
+      </div>
+    </div>
+  );
+}
+
+function SceneMrsAssessmentResultRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1MrsAssessmentResultPreviewPage />
+      </div>
+    </div>
+  );
+}
+
+function ScenePsqiAssessmentRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1PsqiAssessmentPage />
+      </div>
+    </div>
+  );
+}
+
+function ScenePsqiAssessmentResultRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1PsqiAssessmentResultPreviewPage />
+      </div>
+    </div>
+  );
+}
+
+function SceneIciqAssessmentRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1IciqAssessmentPage />
+      </div>
+    </div>
+  );
+}
+
+function SceneIciqAssessmentResultRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1IciqAssessmentResultPreviewPage />
+      </div>
+    </div>
+  );
+}
+
 function KegelReviewRouteShell() {
   return (
     <div className="app-root">
@@ -221,6 +287,21 @@ export function AppRouter() {
       <Route
         path="/scene1-gad7-assessment-result"
         element={<SceneGad7AssessmentResultRouteShell />}
+      />
+      <Route path="/scene1-mrs-assessment" element={<SceneMrsAssessmentRouteShell />} />
+      <Route
+        path="/scene1-mrs-assessment-result"
+        element={<SceneMrsAssessmentResultRouteShell />}
+      />
+      <Route path="/scene1-psqi-assessment" element={<ScenePsqiAssessmentRouteShell />} />
+      <Route
+        path="/scene1-psqi-assessment-result"
+        element={<ScenePsqiAssessmentResultRouteShell />}
+      />
+      <Route path="/scene1-iciq-assessment" element={<SceneIciqAssessmentRouteShell />} />
+      <Route
+        path="/scene1-iciq-assessment-result"
+        element={<SceneIciqAssessmentResultRouteShell />}
       />
       <Route path="/scene1-assessment-result" element={<SceneAssessmentResultRouteShell />} />
       <Route path="/scene1-assessment-stage-compare" element={<SceneAssessmentStageCompareRouteShell />} />

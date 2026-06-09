@@ -69,4 +69,15 @@ describe('scene1 home first-screen fidelity', () => {
     expect(homeText).toContain('loading="lazy"');
     expect(homeText).toContain('decoding="async"');
   });
+
+  it('keeps long tool labels wrappable and gives psqi forms extra footer-safe bottom space', () => {
+    const cssText = readFileSync(resolve(process.cwd(), 'src/styles/base.css'), 'utf8');
+
+    expect(cssText).toMatch(
+      /\.scene1-pregnancy-tool-label\s*\{[\s\S]*?font-size:\s*12px;[\s\S]*?white-space:\s*normal;[\s\S]*?word-break:\s*break-word;/,
+    );
+    expect(cssText).toMatch(
+      /\.scene1-psqi-assessment-page\s+\.scene1-assessment-body\s*\{[\s\S]*?padding-bottom:\s*132px;/,
+    );
+  });
 });
