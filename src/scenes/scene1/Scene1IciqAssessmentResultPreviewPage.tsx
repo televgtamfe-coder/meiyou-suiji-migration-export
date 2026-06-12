@@ -15,7 +15,10 @@ export function Scene1IciqAssessmentResultPreviewPage() {
     return <Navigate to="/scene1-iciq-assessment" replace />;
   }
 
-  const summary = getIciqAssessmentResultSummary(createIciqAssessmentAnswers(latest.answers));
+  const summary = getIciqAssessmentResultSummary(
+    createIciqAssessmentAnswers(latest.answers),
+    latest.previousAnswers ? createIciqAssessmentAnswers(latest.previousAnswers) : null,
+  );
 
   return (
     <div

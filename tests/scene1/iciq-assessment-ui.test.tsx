@@ -32,6 +32,12 @@ describe('iciq assessment ui', () => {
           iciqLeakTriggers: ['toilet', 'cough', 'exercise'],
         },
         completedAt: '2026-06-08T10:00:00.000Z',
+        previousAnswers: {
+          iciqLeakFrequency: '5',
+          iciqLeakAmount: '6',
+          iciqImpact: '9',
+          iciqLeakTriggers: ['toilet', 'cough', 'exercise'],
+        },
       }),
     );
 
@@ -43,6 +49,7 @@ describe('iciq assessment ui', () => {
 
     expect(screen.getByTestId('scene1-iciq-assessment-result-route-shell')).toBeInTheDocument();
     expect(screen.getByTestId('scene1-iciq-assessment-result-main-card')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-iciq-assessment-result-retest')).toBeInTheDocument();
     expect(screen.getAllByText(/ICIQ/).length).toBeGreaterThan(0);
   });
 });

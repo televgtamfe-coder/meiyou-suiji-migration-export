@@ -20,6 +20,11 @@ export type IciqAssessmentResultSummary = {
   leakageTypeLabel: string;
   typeInsight: string;
   urgentFlags: string[];
+  retestFeedback: {
+    label: string;
+    summary: string;
+    delta: number;
+  } | null;
   tone: IciqAssessmentResultTone;
 };
 
@@ -49,23 +54,26 @@ function getLevel(score: number): IciqAssessmentResultLevel {
 }
 
 function getLeakageType(answers: IciqAssessmentAnswers): IciqAssessmentLeakageType {
-  const triggers = answers.iciqLeakTriggers;
+  const triggers = answers.iciqLeakTriggers.filter((item) => item !== 'none');
   const hasStress = triggers.includes('cough') || triggers.includes('exercise');
   const hasUrge = triggers.includes('toilet');
+  const hasOtherTrigger = triggers.some(
+    (item) => item !== 'cough' && item !== 'exercise' && item !== 'toilet',
+  );
 
   if (getScore(answers.iciqLeakFrequency) === 0 && getScore(answers.iciqLeakAmount) === 0 && getScore(answers.iciqImpact) === 0) {
     return 'none';
   }
 
-  if (hasStress && hasUrge) {
+  if (!hasOtherTrigger && hasStress && hasUrge) {
     return 'mixed';
   }
 
-  if (hasStress) {
+  if (!hasOtherTrigger && hasStress && !hasUrge) {
     return 'stress';
   }
 
-  if (hasUrge) {
+  if (!hasOtherTrigger && hasUrge && triggers.length === 1) {
     return 'urge';
   }
 
@@ -129,6 +137,53 @@ function getUrgentFlags(answers: IciqAssessmentAnswers) {
   return flags;
 }
 
+function getTotalScore(answers: IciqAssessmentAnswers) {
+  return (
+    getScore(answers.iciqLeakFrequency) +
+    getScore(answers.iciqLeakAmount) +
+    getScore(answers.iciqImpact)
+  );
+}
+
+function getRetestFeedback(score: number, previousAnswers?: IciqAssessmentAnswers | null) {
+  if (!previousAnswers) {
+    return null;
+  }
+
+  const previousScore = getTotalScore(previousAnswers);
+  const delta = score - previousScore;
+
+  if (delta <= -4) {
+    return {
+      label: '较明显改善',
+      summary: '和上次相比，你的症状评分已有明显下降，说明当前困扰在减轻，建议继续保持现有干预节奏。',
+      delta,
+    };
+  }
+
+  if (delta <= -1) {
+    return {
+      label: '轻度改善',
+      summary: '和上次相比，你的症状有一定改善，但变化幅度还不算大，建议继续观察接下来几周的变化。',
+      delta,
+    };
+  }
+
+  if (delta >= 2) {
+    return {
+      label: '可能加重',
+      summary: '和上次相比，你的漏尿症状有加重趋势，建议回顾近期诱因，并考虑尽快进行专业评估。',
+      delta,
+    };
+  }
+
+  return {
+    label: '基本稳定',
+    summary: '和上次相比，你的症状整体较稳定；如果已经开始干预，通常还需要更多时间继续观察。',
+    delta,
+  };
+}
+
 export function createIciqAssessmentAnswers(
   overrides: Partial<IciqAssessmentAnswers> = {},
 ) {
@@ -143,11 +198,9 @@ export function createIciqAssessmentAnswers(
 
 export function getIciqAssessmentResultSummary(
   answers: IciqAssessmentAnswers,
+  previousAnswers?: IciqAssessmentAnswers | null,
 ): IciqAssessmentResultSummary {
-  const score =
-    getScore(answers.iciqLeakFrequency) +
-    getScore(answers.iciqLeakAmount) +
-    getScore(answers.iciqImpact);
+  const score = getTotalScore(answers);
   const level = getLevel(score);
   const copy = iciqAssessmentResultCopy[level];
   const leakageType = getLeakageType(answers);
@@ -165,6 +218,7 @@ export function getIciqAssessmentResultSummary(
     leakageTypeLabel: getLeakageTypeLabel(leakageType),
     typeInsight: getTypeInsight(answers, leakageType),
     urgentFlags,
+    retestFeedback: getRetestFeedback(score, previousAnswers),
     tone: copy.tone,
   };
 }

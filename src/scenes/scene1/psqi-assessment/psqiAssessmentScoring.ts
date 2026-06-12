@@ -17,6 +17,13 @@ export type PsqiAssessmentComponentScores = {
   daytimeDysfunction: number;
 };
 
+export type PsqiAssessmentComponentFeedbackItem = {
+  id: keyof PsqiAssessmentComponentScores;
+  label: string;
+  score: number;
+  feedback: string;
+};
+
 export type PsqiAssessmentResultSummary = {
   title: string;
   score: number;
@@ -27,6 +34,7 @@ export type PsqiAssessmentResultSummary = {
   disclaimer: string;
   hasPoorSleep: boolean;
   componentScores: PsqiAssessmentComponentScores;
+  componentFeedback: PsqiAssessmentComponentFeedbackItem[];
   dominantModules: string[];
   personalizedNotes: string[];
   tone: PsqiAssessmentResultTone;
@@ -43,6 +51,75 @@ const disturbanceFields = [
   'psqiSleepDisturbancePain',
   'psqiSleepDisturbanceOther',
 ] as const;
+
+const psqiComponentFeedbackCopy: Record<
+  keyof PsqiAssessmentComponentScores,
+  { label: string; feedbackByScore: [string, string, string, string] }
+> = {
+  subjectiveQuality: {
+    label: '主观睡眠质量',
+    feedbackByScore: [
+      '你主观上感觉睡得还可以，这是比较好的信号。',
+      '你已经开始觉得睡眠不如以前，建议尽早调整作息和睡前状态。',
+      '你对睡眠的满意度明显下降，说明睡眠问题已经进入可感知阶段。',
+      '你主观上明显觉得睡得不好，这通常是需要优先处理的信号之一。',
+    ],
+  },
+  sleepLatency: {
+    label: '入睡潜伏期',
+    feedbackByScore: [
+      '你的入睡速度基本正常。',
+      '你偶尔会入睡变慢，提示大脑和身体还没有完全放松下来。',
+      '你入睡困难已经比较明显，常见于压力、焦虑或作息紊乱时。',
+      '你存在显著入睡困难，建议优先处理睡前唤醒过高和情绪紧张问题。',
+    ],
+  },
+  sleepDuration: {
+    label: '睡眠时长',
+    feedbackByScore: [
+      '你的睡眠时长总体尚可。',
+      '你的睡眠时长开始偏少，长期下去可能影响恢复感。',
+      '你的有效睡眠时间不足已经比较明显，可能影响白天精力和情绪稳定。',
+      '你的睡眠时长严重不足，这是需要重点干预的睡眠问题之一。',
+    ],
+  },
+  sleepEfficiency: {
+    label: '睡眠效率',
+    feedbackByScore: [
+      '你在床上的大部分时间都能真正用于睡眠。',
+      '你的睡眠效率略有下降，可能有躺了很久但没睡着的情况。',
+      '你的睡眠效率偏低，提示在床时间和真正睡着时间并不匹配。',
+      '你的睡眠效率明显下降，说明你可能长期处于想睡但睡不好的状态。',
+    ],
+  },
+  sleepDisturbance: {
+    label: '睡眠障碍',
+    feedbackByScore: [
+      '夜间睡眠相对完整。',
+      '你偶尔会受到夜间醒来、起夜或其他干扰。',
+      '你的睡眠容易被打断，可能存在频繁醒来、睡眠不实的问题。',
+      '你的夜间睡眠干扰很明显，睡眠连续性较差，恢复效果会明显下降。',
+    ],
+  },
+  sleepMedication: {
+    label: '睡眠药物使用',
+    feedbackByScore: [
+      '你目前没有明显依赖助眠药物。',
+      '你偶尔需要借助药物帮助睡眠，提示睡眠困扰已经开始影响你。',
+      '你较频繁依赖药物帮助睡眠，建议关注用药规律和依赖风险。',
+      '你对药物助眠依赖较高，建议在医生指导下评估长期睡眠管理方案。',
+    ],
+  },
+  daytimeDysfunction: {
+    label: '日间功能障碍',
+    feedbackByScore: [
+      '睡眠问题对白天影响不大。',
+      '你白天偶尔会感到疲惫、注意力下降或效率受影响。',
+      '你的睡眠已经明显影响白天状态，这是需要重视的信号。',
+      '你的白天功能受损较重，说明睡眠问题已经在影响整体生活质量。',
+    ],
+  },
+};
 
 function getNumberValue(value: string) {
   const parsed = Number(value);
@@ -249,6 +326,19 @@ function getPersonalizedNotes(componentScores: PsqiAssessmentComponentScores) {
   return notes;
 }
 
+function getComponentFeedback(
+  componentScores: PsqiAssessmentComponentScores,
+): PsqiAssessmentComponentFeedbackItem[] {
+  return (Object.entries(psqiComponentFeedbackCopy) as Array<
+    [keyof PsqiAssessmentComponentScores, (typeof psqiComponentFeedbackCopy)[keyof PsqiAssessmentComponentScores]]
+  >).map(([id, config]) => ({
+    id,
+    label: config.label,
+    score: componentScores[id],
+    feedback: config.feedbackByScore[componentScores[id]] ?? config.feedbackByScore[0],
+  }));
+}
+
 export function createPsqiAssessmentAnswers(
   overrides: Partial<PsqiAssessmentAnswers> = {},
 ) {
@@ -302,6 +392,7 @@ export function getPsqiAssessmentResultSummary(
     disclaimer: psqiAssessmentDisclaimer,
     hasPoorSleep: score > 5,
     componentScores,
+    componentFeedback: getComponentFeedback(componentScores),
     dominantModules: getDominantModules(componentScores),
     personalizedNotes: getPersonalizedNotes(componentScores),
     tone: copy.tone,

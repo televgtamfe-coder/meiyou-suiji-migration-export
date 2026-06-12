@@ -58,6 +58,8 @@ describe('psqi assessment ui', () => {
 
     expect(screen.getByTestId('scene1-psqi-assessment-result-route-shell')).toBeInTheDocument();
     expect(screen.getByTestId('scene1-psqi-assessment-result-main-card')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-psqi-assessment-result-component-feedback')).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-psqi-assessment-result-component-feedback-sleepLatency')).toBeInTheDocument();
     expect(screen.getAllByText(/PSQI/).length).toBeGreaterThan(0);
   });
 });

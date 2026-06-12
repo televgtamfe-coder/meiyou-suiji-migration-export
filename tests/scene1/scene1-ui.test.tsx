@@ -7,6 +7,20 @@ import { AssessmentStepRenderer } from '../../src/scenes/scene1/components/Asses
 import { PerimenopauseAssessmentShell } from '../../src/scenes/scene1/components/PerimenopauseAssessmentShell';
 import { createAssessmentStateWithoutEntry } from '../../src/scenes/scene1/assessmentState';
 import { SCENE1_ASSESSMENT_LATEST_STORAGE_KEY } from '../../src/scenes/scene1/assessmentResultStorage';
+import {
+  SCENE1_BONE_ASSESSMENT_LATEST_STORAGE_KEY,
+} from '../../src/scenes/scene1/bone-assessment/boneAssessmentStorage';
+import {
+  createBoneAssessmentAnswers,
+  getBoneAssessmentResultSummary,
+} from '../../src/scenes/scene1/bone-assessment/boneAssessmentScoring';
+import {
+  SCENE1_EXERCISE_ASSESSMENT_LATEST_STORAGE_KEY,
+} from '../../src/scenes/scene1/exercise-assessment/exerciseAssessmentStorage';
+import {
+  createExerciseAssessmentAnswers,
+  getExerciseAssessmentResultSummary,
+} from '../../src/scenes/scene1/exercise-assessment/exerciseAssessmentScoring';
 
 function createCompletedAssessmentState() {
   const baseState = createAssessmentStateWithoutEntry();
@@ -663,6 +677,104 @@ describe('scene1 ui', () => {
       ),
     ).toBeInTheDocument();
     expect(container.querySelector('.scene1-assessment-result-analysis-block')).toBeNull();
+  });
+
+  it('shows pending copy for bone and exercise when independent assessments are not completed', () => {
+    render(
+      <AssessmentStepRenderer
+        state={createCompletedAssessmentState()}
+        onAnswer={() => {}}
+      />,
+    );
+
+    expect(
+      within(screen.getByTestId('scene1-assessment-result-focus-item-bone-health')).getByText(
+        '尚未完成骨钙测评，当前不展示骨健康与维生素D的代理判断。',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('scene1-assessment-result-focus-item-exercise')).getByText(
+        '尚未完成运动能力评估，当前不展示运动安全性的代理判断。',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('scene1-assessment-result-radar-metric-bone-health-reserve')).toHaveTextContent(
+      '待测',
+    );
+    expect(screen.getByTestId('scene1-assessment-result-radar-metric-exercise-safety')).toHaveTextContent(
+      '待测',
+    );
+  });
+
+  it('uses the latest independent bone and exercise results instead of proxy output', () => {
+    const boneSummary = getBoneAssessmentResultSummary(
+      createBoneAssessmentAnswers({
+        age: '52',
+        heightCm: '160',
+        weightKg: '48',
+        boneParentOsteoporosisOrFragilityFracture: 'yes',
+        boneExerciseUnder30Min: 'yes',
+        vdSunExposureUnder20Min: 'yes',
+        vdBoneMuscleDiscomfort: 'yes',
+      }),
+    );
+    const exerciseSummary = getExerciseAssessmentResultSummary(
+      createExerciseAssessmentAnswers({
+        exerciseBoneJointSoftTissueIssue: 'yes',
+      }),
+    );
+
+    window.localStorage.setItem(
+      SCENE1_BONE_ASSESSMENT_LATEST_STORAGE_KEY,
+      JSON.stringify({
+        answers: createBoneAssessmentAnswers({
+          age: '52',
+          heightCm: '160',
+          weightKg: '48',
+          boneParentOsteoporosisOrFragilityFracture: 'yes',
+          boneExerciseUnder30Min: 'yes',
+          vdSunExposureUnder20Min: 'yes',
+          vdBoneMuscleDiscomfort: 'yes',
+        }),
+        completedAt: '2026-06-11T10:00:00.000Z',
+      }),
+    );
+    window.localStorage.setItem(
+      SCENE1_EXERCISE_ASSESSMENT_LATEST_STORAGE_KEY,
+      JSON.stringify({
+        answers: createExerciseAssessmentAnswers({
+          exerciseBoneJointSoftTissueIssue: 'yes',
+        }),
+        completedAt: '2026-06-11T10:00:00.000Z',
+      }),
+    );
+
+    render(
+      <AssessmentStepRenderer
+        state={createCompletedAssessmentState()}
+        onAnswer={() => {}}
+      />,
+    );
+
+    expect(
+      within(screen.getByTestId('scene1-assessment-result-focus-item-bone-health')).getByText(
+        boneSummary.mainResult.label,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('scene1-assessment-result-focus-item-bone-health')).getByText(
+        boneSummary.mainResult.summary,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('scene1-assessment-result-focus-item-exercise')).getByText(
+        exerciseSummary.resultSummary,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('scene1-assessment-result-focus-item-exercise')).getByText(
+        exerciseSummary.summaryText,
+      ),
+    ).toBeInTheDocument();
   });
 
   it('removes the duplicate bone-health and exercise extension cards after merging content', () => {

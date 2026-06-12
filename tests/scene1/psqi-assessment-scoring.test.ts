@@ -27,6 +27,16 @@ describe('psqi assessment scoring', () => {
       sleepMedication: 0,
       daytimeDysfunction: 0,
     });
+    expect(summary.componentFeedback).toHaveLength(7);
+    expect(summary.componentFeedback.map((item) => item.id)).toEqual([
+      'subjectiveQuality',
+      'sleepLatency',
+      'sleepDuration',
+      'sleepEfficiency',
+      'sleepDisturbance',
+      'sleepMedication',
+      'daytimeDysfunction',
+    ]);
   });
 
   it('returns the high-burden result when multiple PSQI components are poor', () => {
@@ -59,5 +69,13 @@ describe('psqi assessment scoring', () => {
     expect(summary.componentScores.sleepLatency).toBe(3);
     expect(summary.componentScores.sleepDuration).toBe(3);
     expect(summary.componentScores.sleepEfficiency).toBe(3);
+    expect(summary.componentFeedback.find((item) => item.id === 'sleepLatency')).toMatchObject({
+      id: 'sleepLatency',
+      score: 3,
+    });
+    expect(summary.componentFeedback.find((item) => item.id === 'sleepMedication')).toMatchObject({
+      id: 'sleepMedication',
+      score: 2,
+    });
   });
 });

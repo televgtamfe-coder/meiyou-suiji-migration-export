@@ -47,6 +47,18 @@ export function IciqAssessmentResult({ summary }: IciqAssessmentResultProps) {
           </div>
         </div>
 
+        {summary.retestFeedback ? (
+          <div
+            className="scene1-gad7-assessment-result-section"
+            data-testid="scene1-iciq-assessment-result-retest"
+          >
+            <h3>复测反馈</h3>
+            <div className="scene1-gad7-assessment-result-copy">
+              <p>{`${summary.retestFeedback.label}：${summary.retestFeedback.summary}`}</p>
+            </div>
+          </div>
+        ) : null}
+
         {summary.urgentFlags.length > 0 ? (
           <div className="scene1-gad7-assessment-result-section">
             <h3>强化提示</h3>

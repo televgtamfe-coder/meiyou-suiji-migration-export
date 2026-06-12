@@ -4,8 +4,17 @@ import { AssessmentFieldKey, AssessmentOption, getAssessmentStep } from '../asse
 import { Scene1AssessmentState } from '../assessmentState';
 import { getKmiScoreSummary, pickCompletedKmiAnswers } from '../kmiScoring';
 import { kmiRules } from '../kmiRules';
-import { getResultDecisionSummary } from '../resultDecision';
 import { AssessmentStageClockSummary } from './AssessmentStageClockSummary';
+import {
+  createBoneAssessmentAnswers,
+  getBoneAssessmentResultSummary,
+} from '../bone-assessment/boneAssessmentScoring';
+import { readBoneAssessmentLatest } from '../bone-assessment/boneAssessmentStorage';
+import {
+  createExerciseAssessmentAnswers,
+  getExerciseAssessmentResultSummary,
+} from '../exercise-assessment/exerciseAssessmentScoring';
+import { readExerciseAssessmentLatest } from '../exercise-assessment/exerciseAssessmentStorage';
 
 type AssessmentStepRendererProps = {
   state: Scene1AssessmentState;
@@ -987,7 +996,7 @@ type ResultHighlightItem = {
 type ResultRadarMetric = {
   id?: string;
   label: string;
-  score: number;
+  score: number | null;
 };
 
 type ResultScoreStageTone = 'alert' | 'focus' | 'good' | 'excellent';
@@ -1008,6 +1017,20 @@ const resultScoreStages: ResultScoreStage[] = [
   { label: '良好', description: '75-84', tone: 'good' },
   { label: '优秀', description: '≥85', tone: 'excellent' },
 ];
+const pendingResultScoreStage: ResultScoreStage = {
+  label: '待测',
+  description: '完成后展示',
+  tone: 'focus',
+};
+
+type SupplementAssessmentResult = {
+  badgeLabel: string;
+  overviewTag: string;
+  body: string;
+  analysis: string;
+  tone: ResultBadgeTone;
+  score: number | null;
+};
 
 function getSeverityTone(severity: number): ResultBadgeTone {
   if (severity >= 2) {
@@ -1158,6 +1181,92 @@ function getDecisionDisplayScore(label: string) {
   return 86;
 }
 
+function getResultDisplayScoreFromTone(tone: ResultBadgeTone) {
+  if (tone === 'orange') {
+    return 38;
+  }
+
+  if (tone === 'pink') {
+    return 64;
+  }
+
+  return 86;
+}
+
+function getMetricChartScore(score: number | null) {
+  return score ?? 0;
+}
+
+function getMetricScoreText(score: number | null) {
+  return score === null ? '待测' : `得分 ${score}`;
+}
+
+function getMetricScoreValue(score: number | null) {
+  return score === null ? '--' : String(score);
+}
+
+function getAverageScore(scores: Array<number | null>) {
+  const validScores = scores.filter((item): item is number => item !== null);
+
+  if (validScores.length === 0) {
+    return 0;
+  }
+
+  return Math.round(validScores.reduce((sum, item) => sum + item, 0) / validScores.length);
+}
+
+function getBoneSupplementAssessmentResult(): SupplementAssessmentResult {
+  const latest = readBoneAssessmentLatest();
+
+  if (!latest) {
+    return {
+      badgeLabel: '待完成',
+      overviewTag: '骨钙待完成',
+      body: '尚未完成骨钙测评，当前不展示骨健康与维生素D的代理判断。',
+      analysis: '完成独立测评后，这里会展示真实的骨质疏松风险与维生素D结果。',
+      tone: 'pink',
+      score: null,
+    };
+  }
+
+  const summary = getBoneAssessmentResultSummary(createBoneAssessmentAnswers(latest.answers));
+
+  return {
+    badgeLabel: summary.mainResult.label,
+    overviewTag: '骨钙已同步',
+    body: summary.mainResult.summary,
+    analysis: summary.vitaminD.detail,
+    tone: summary.mainResult.tone,
+    score: getResultDisplayScoreFromTone(summary.mainResult.tone),
+  };
+}
+
+function getExerciseSupplementAssessmentResult(): SupplementAssessmentResult {
+  const latest = readExerciseAssessmentLatest();
+
+  if (!latest) {
+    return {
+      badgeLabel: '待完成',
+      overviewTag: '运动待完成',
+      body: '尚未完成运动能力评估，当前不展示运动安全性的代理判断。',
+      analysis: '完成独立测评后，这里会展示真实的运动风险筛查结果。',
+      tone: 'pink',
+      score: null,
+    };
+  }
+
+  const summary = getExerciseAssessmentResultSummary(createExerciseAssessmentAnswers(latest.answers));
+
+  return {
+    badgeLabel: summary.resultSummary,
+    overviewTag: '运动已同步',
+    body: summary.summaryText,
+    analysis: summary.detail,
+    tone: summary.tone,
+    score: getResultDisplayScoreFromTone(summary.tone),
+  };
+}
+
 function getKmiSubgroupHealthScore(
   details: Array<{ field: string; weight: number; score: number }>,
   fields: readonly string[],
@@ -1179,7 +1288,11 @@ function getKmiSubgroupHealthScore(
   return Math.max(0, 100 - Math.round((subgroupScore / subgroupMax) * 100));
 }
 
-function getResultScoreStage(score: number): ResultScoreStage {
+function getResultScoreStage(score: number | null): ResultScoreStage {
+  if (score === null) {
+    return pendingResultScoreStage;
+  }
+
   if (score >= 85) {
     return resultScoreStages[3];
   }
@@ -1209,8 +1322,9 @@ function buildPictorialBarOption(metrics: ResultRadarMetric[]): EChartsOption {
       },
       formatter: (params) => {
         const row = Array.isArray(params) ? params[0] : params;
+        const actualScore = row.data?.actualScore;
 
-        return `${row.name}<br/>得分 ${row.data?.actualScore ?? row.value ?? 0}`;
+        return `${row.name}<br/>${getMetricScoreText(actualScore === null ? null : actualScore ?? row.value ?? 0)}`;
       },
     },
     grid: {
@@ -1291,7 +1405,7 @@ function buildPictorialBarOption(metrics: ResultRadarMetric[]): EChartsOption {
           color: '#ff5d94',
         },
         data: metrics.map((item) => ({
-          value: item.score,
+          value: getMetricChartScore(item.score),
           actualScore: item.score,
         })),
       },
@@ -1376,7 +1490,7 @@ function AssessmentResultPictorialBarCard({ metrics }: { metrics: ResultRadarMet
             data-testid={`scene1-assessment-result-radar-metric-${item.id ?? item.label}`}
           >
             <strong>{item.label}</strong>
-            <span>{`得分 ${item.score}`}</span>
+            <span>{getMetricScoreText(item.score)}</span>
           </div>
         ))}
       </div>
@@ -1497,7 +1611,7 @@ function AssessmentResultPictorialBarCardV2({ metrics }: { metrics: ResultRadarM
                     className="scene1-assessment-result-pictorial-score-inline scene1-assessment-result-pictorial-score-anchor"
                     data-testid={`scene1-assessment-result-pictorial-score-${item.id ?? item.label}`}
                   >
-                    {item.score}
+                    {getMetricScoreValue(item.score)}
                   </strong>
                 </div>
               );
@@ -1515,7 +1629,7 @@ function AssessmentResultPictorialBarCardV2({ metrics }: { metrics: ResultRadarM
               data-testid={`scene1-assessment-result-radar-metric-${item.id ?? item.label}`}
             >
               <strong>{item.label}</strong>
-              <span>{`得分 ${item.score}`}</span>
+              <span>{getMetricScoreText(item.score)}</span>
               <em>{stage.label}</em>
             </div>
           );
@@ -1533,7 +1647,6 @@ function CompletionState({ answers }: { answers: Scene1AssessmentState['answers'
     .filter((item) => item.score > 0)
     .sort((left, right) => right.score - left.score)
     .slice(0, 3);
-  const decisionSummary = getResultDecisionSummary(answers, summary.details);
   const kmiDecisionSummary =
     summary.interpretation.band === 'severe'
       ? '症状评分已达重度区间，建议尽快结合门诊做系统评估。'
@@ -1550,12 +1663,18 @@ function CompletionState({ answers }: { answers: Scene1AssessmentState['answers'
     summary.details,
     genitourinaryReproductiveFields,
   );
-  const boneHealthScore = getDecisionDisplayScore(decisionSummary.boneHealth.label);
-  const exerciseScore = getDecisionDisplayScore(decisionSummary.exercise.label);
+  const boneAssessmentResult = getBoneSupplementAssessmentResult();
+  const exerciseAssessmentResult = getExerciseSupplementAssessmentResult();
+  const boneHealthScore = boneAssessmentResult.score;
+  const exerciseScore = exerciseAssessmentResult.score;
   const specialFactorScore = getSpecialFactorScore(answers);
-  const overallHealthScore = Math.round(
-    (kmiHealthScore + boneHealthScore + exerciseScore + cycleHealthScore + specialFactorScore) / 5
-  );
+  const overallHealthScore = getAverageScore([
+    kmiHealthScore,
+    boneHealthScore,
+    exerciseScore,
+    cycleHealthScore,
+    specialFactorScore,
+  ]);
   const highlightItems: ResultHighlightItem[] = [
     ...topSymptoms.map((item) => ({
       id: item.field,
@@ -1567,18 +1686,18 @@ function CompletionState({ answers }: { answers: Scene1AssessmentState['answers'
     {
       id: 'bone-health',
       title: '骨健康与维生素D风险',
-      tag: decisionSummary.boneHealth.label,
-      body: decisionSummary.boneHealth.summary,
-      tone: getRiskToneFromDecisionLabel(decisionSummary.boneHealth.label),
-      analysis: decisionSummary.boneHealth.rationale,
+      tag: boneAssessmentResult.badgeLabel,
+      body: boneAssessmentResult.body,
+      tone: boneAssessmentResult.tone,
+      analysis: boneAssessmentResult.analysis,
     },
     {
       id: 'exercise',
       title: '运动能力初筛',
-      tag: decisionSummary.exercise.label,
-      body: decisionSummary.exercise.summary,
-      tone: getRiskToneFromDecisionLabel(decisionSummary.exercise.label),
-      analysis: decisionSummary.exercise.rationale,
+      tag: exerciseAssessmentResult.badgeLabel,
+      body: exerciseAssessmentResult.body,
+      tone: exerciseAssessmentResult.tone,
+      analysis: exerciseAssessmentResult.analysis,
     },
   ].slice(0, 5);
   const breakdownMetrics: ResultRadarMetric[] = [
@@ -1676,8 +1795,8 @@ function CompletionState({ answers }: { answers: Scene1AssessmentState['answers'
                 data-testid="scene1-assessment-result-overview-tags"
               >
               <span className="scene1-assessment-result-tag">KMI {summary.interpretation.label}</span>
-              <span className="scene1-assessment-result-tag">{decisionSummary.boneHealth.label}</span>
-              <span className="scene1-assessment-result-tag">{decisionSummary.exercise.label}</span>
+              <span className="scene1-assessment-result-tag">{boneAssessmentResult.overviewTag}</span>
+              <span className="scene1-assessment-result-tag">{exerciseAssessmentResult.overviewTag}</span>
             </div>
               <div
                 className="scene1-assessment-result-overview-summary"

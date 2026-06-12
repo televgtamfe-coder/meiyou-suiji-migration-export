@@ -6,6 +6,8 @@ export const SCENE1_ICIQ_ASSESSMENT_LATEST_STORAGE_KEY = 'scene1:iciq-assessment
 export type IciqAssessmentLatestRecord = {
   answers: IciqAssessmentAnswers;
   completedAt: string;
+  previousAnswers?: IciqAssessmentAnswers;
+  previousCompletedAt?: string;
 };
 
 function readJson<T>(storageKey: string): T | null {
@@ -55,5 +57,11 @@ export function readIciqAssessmentLatest() {
 }
 
 export function writeIciqAssessmentLatest(record: IciqAssessmentLatestRecord) {
-  writeJson(SCENE1_ICIQ_ASSESSMENT_LATEST_STORAGE_KEY, record);
+  const previousRecord = readIciqAssessmentLatest();
+
+  writeJson(SCENE1_ICIQ_ASSESSMENT_LATEST_STORAGE_KEY, {
+    ...record,
+    previousAnswers: record.previousAnswers ?? previousRecord?.answers,
+    previousCompletedAt: record.previousCompletedAt ?? previousRecord?.completedAt,
+  });
 }

@@ -47,6 +47,23 @@ export function PsqiAssessmentResult({ summary }: PsqiAssessmentResultProps) {
           </div>
         </div>
 
+        <div
+          className="scene1-gad7-assessment-result-section"
+          data-testid="scene1-psqi-assessment-result-component-feedback"
+        >
+          <h3>七维反馈</h3>
+          <ul className="scene1-gad7-assessment-result-list">
+            {summary.componentFeedback.map((item) => (
+              <li
+                key={item.id}
+                data-testid={`scene1-psqi-assessment-result-component-feedback-${item.id}`}
+              >
+                {`${item.label} ${item.score}分：${item.feedback}`}
+              </li>
+            ))}
+          </ul>
+        </div>
+
         {summary.dominantModules.length > 0 ? (
           <div className="scene1-gad7-assessment-result-section">
             <h3>重点模块</h3>
