@@ -109,4 +109,15 @@ describe('assessment result routes', () => {
     expect(screen.getByTestId('scene1-gad7-assessment-route-shell')).toBeInTheDocument();
     expect(screen.queryByTestId('scene1-gad7-assessment-result-route-shell')).not.toBeInTheDocument();
   });
+
+  it('redirects the emq-r13 assessment result route to its questionnaire when no latest result exists', () => {
+    render(
+      <MemoryRouter initialEntries={['/scene1-emq-r13-assessment-result']}>
+        <AppRouter />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId('scene1-emq-r13-assessment-route-shell')).toBeInTheDocument();
+    expect(screen.queryByTestId('scene1-emq-r13-assessment-result-route-shell')).not.toBeInTheDocument();
+  });
 });

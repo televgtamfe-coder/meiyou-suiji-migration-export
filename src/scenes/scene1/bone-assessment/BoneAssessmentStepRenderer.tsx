@@ -6,6 +6,7 @@ import {
 } from './boneAssessmentContent';
 import { BoneAssessmentState, getCurrentBoneAssessmentStep } from './boneAssessmentState';
 import { BoneAssessmentCarryoverItem, isBoneAssessmentProfileField } from './boneAssessmentSharedProfile';
+import { boneAssessmentOverviewSummary } from '../assessmentOverviewCopy';
 
 type BoneAssessmentStepRendererProps = {
   state: BoneAssessmentState;
@@ -304,6 +305,7 @@ export function BoneAssessmentStepRenderer({
           <p className="scene1-assessment-body-copy">
             通过 5 步问卷快速查看当前骨健康风险，并同步给出维生素D风险副结果。
           </p>
+          <p className="scene1-assessment-helper">{boneAssessmentOverviewSummary}</p>
         </div>
 
         {carryoverItems.length > 0 ? (

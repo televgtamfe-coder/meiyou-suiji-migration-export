@@ -14,6 +14,8 @@ import { Scene1Phq9AssessmentPage } from '../scenes/scene1/Scene1Phq9AssessmentP
 import { Scene1Phq9AssessmentResultPreviewPage } from '../scenes/scene1/Scene1Phq9AssessmentResultPreviewPage';
 import { Scene1Gad7AssessmentPage } from '../scenes/scene1/Scene1Gad7AssessmentPage';
 import { Scene1Gad7AssessmentResultPreviewPage } from '../scenes/scene1/Scene1Gad7AssessmentResultPreviewPage';
+import { Scene1EmqR13AssessmentPage } from '../scenes/scene1/Scene1EmqR13AssessmentPage';
+import { Scene1EmqR13AssessmentResultPreviewPage } from '../scenes/scene1/Scene1EmqR13AssessmentResultPreviewPage';
 import { Scene1MrsAssessmentPage } from '../scenes/scene1/Scene1MrsAssessmentPage';
 import { Scene1MrsAssessmentResultPreviewPage } from '../scenes/scene1/Scene1MrsAssessmentResultPreviewPage';
 import { Scene1PsqiAssessmentPage } from '../scenes/scene1/Scene1PsqiAssessmentPage';
@@ -188,6 +190,26 @@ function SceneGad7AssessmentResultRouteShell() {
   );
 }
 
+function SceneEmqR13AssessmentRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1EmqR13AssessmentPage />
+      </div>
+    </div>
+  );
+}
+
+function SceneEmqR13AssessmentResultRouteShell() {
+  return (
+    <div className="app-root">
+      <div className="phone-shell" data-testid="phone-shell">
+        <Scene1EmqR13AssessmentResultPreviewPage />
+      </div>
+    </div>
+  );
+}
+
 function SceneMrsAssessmentRouteShell() {
   return (
     <div className="app-root">
@@ -287,6 +309,11 @@ export function AppRouter() {
       <Route
         path="/scene1-gad7-assessment-result"
         element={<SceneGad7AssessmentResultRouteShell />}
+      />
+      <Route path="/scene1-emq-r13-assessment" element={<SceneEmqR13AssessmentRouteShell />} />
+      <Route
+        path="/scene1-emq-r13-assessment-result"
+        element={<SceneEmqR13AssessmentResultRouteShell />}
       />
       <Route path="/scene1-mrs-assessment" element={<SceneMrsAssessmentRouteShell />} />
       <Route

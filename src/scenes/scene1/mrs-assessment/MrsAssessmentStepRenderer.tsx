@@ -6,6 +6,7 @@ import {
   mrsAssessmentQuestionnaireTitle,
 } from './mrsAssessmentContent';
 import { MrsAssessmentState, getCurrentMrsAssessmentStep } from './mrsAssessmentState';
+import { mrsAssessmentOverviewSummary } from '../assessmentOverviewCopy';
 
 type MrsAssessmentStepRendererProps = {
   state: MrsAssessmentState;
@@ -47,6 +48,7 @@ export function MrsAssessmentStepRenderer({ state, onAnswer }: MrsAssessmentStep
         <div className="scene1-assessment-step-head scene1-assessment-step-head-compact">
           <h2 className="scene1-assessment-title">{mrsAssessmentQuestionnaireTitle}</h2>
           <p className="scene1-assessment-body-copy">{mrsAssessmentIntro}</p>
+          <p className="scene1-assessment-helper">{mrsAssessmentOverviewSummary}</p>
         </div>
       </section>
 

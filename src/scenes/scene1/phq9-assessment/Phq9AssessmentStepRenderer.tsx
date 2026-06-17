@@ -6,6 +6,7 @@ import {
   phq9AssessmentQuestionnaireTitle,
 } from './phq9AssessmentContent';
 import { Phq9AssessmentState, getCurrentPhq9AssessmentStep } from './phq9AssessmentState';
+import { phq9AssessmentOverviewSummary } from '../assessmentOverviewCopy';
 
 type Phq9AssessmentStepRendererProps = {
   state: Phq9AssessmentState;
@@ -50,6 +51,7 @@ export function Phq9AssessmentStepRenderer({
         <div className="scene1-assessment-step-head scene1-assessment-step-head-compact">
           <h2 className="scene1-assessment-title">{phq9AssessmentQuestionnaireTitle}</h2>
           <p className="scene1-assessment-body-copy">{phq9AssessmentIntro}</p>
+          <p className="scene1-assessment-helper">{phq9AssessmentOverviewSummary}</p>
         </div>
       </section>
 

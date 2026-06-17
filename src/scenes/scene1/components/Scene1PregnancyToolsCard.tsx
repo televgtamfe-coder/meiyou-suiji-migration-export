@@ -17,7 +17,7 @@ const pregnancyServiceActions = [
   { key: 'skincare', label: 'MRS \u8bc4\u4f30' },
   { key: 'nanny', label: 'PSQI \u7761\u7720' },
   { key: 'journal', label: 'ICIQ \u5c3f\u5931\u7981' },
-  { key: 'group', label: '\u540c\u57ce\u5b55\u5988\u7fa4' },
+  { key: 'group', label: 'EMQ-R13 \u8bb0\u5fc6\u8bc4\u4f30' },
   { key: 'action', label: '\u80fd\u4e0d\u80fd\u505a' },
 ] as const;
 
@@ -326,7 +326,9 @@ export function Scene1PregnancyToolsCard({
                   ? () => navigate('/scene1-psqi-assessment')
                   : item.key === 'journal'
                     ? () => navigate('/scene1-iciq-assessment')
-                    : item.key === 'action'
+                    : item.key === 'group'
+                      ? () => navigate('/scene1-emq-r13-assessment')
+                      : item.key === 'action'
                       ? () => navigate('/scene1-exercise-assessment')
                       : undefined
             }
