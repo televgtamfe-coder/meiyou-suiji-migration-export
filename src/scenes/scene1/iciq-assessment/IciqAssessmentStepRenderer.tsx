@@ -9,6 +9,7 @@ import {
   iciqLeakTriggerOptions,
 } from './iciqAssessmentContent';
 import { IciqAssessmentState, getCurrentIciqAssessmentStep } from './iciqAssessmentState';
+import { iciqAssessmentOverviewSummary } from '../assessmentOverviewCopy';
 
 type IciqAssessmentStepRendererProps = {
   state: IciqAssessmentState;
@@ -58,6 +59,7 @@ export function IciqAssessmentStepRenderer({
         <div className="scene1-assessment-step-head scene1-assessment-step-head-compact">
           <h2 className="scene1-assessment-title">{iciqAssessmentQuestionnaireTitle}</h2>
           <p className="scene1-assessment-body-copy">{iciqAssessmentIntro}</p>
+          <p className="scene1-assessment-helper">{iciqAssessmentOverviewSummary}</p>
         </div>
       </section>
 

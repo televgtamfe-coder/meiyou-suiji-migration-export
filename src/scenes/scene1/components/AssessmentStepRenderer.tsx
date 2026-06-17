@@ -15,6 +15,7 @@ import {
   getExerciseAssessmentResultSummary,
 } from '../exercise-assessment/exerciseAssessmentScoring';
 import { readExerciseAssessmentLatest } from '../exercise-assessment/exerciseAssessmentStorage';
+import { perimenopauseAssessmentOverviewSummary } from '../assessmentOverviewCopy';
 
 type AssessmentStepRendererProps = {
   state: Scene1AssessmentState;
@@ -1946,6 +1947,7 @@ export function AssessmentStepRenderer({
               <p className="scene1-assessment-footnote-body">
                 预计耗时 3-5 分钟，覆盖基础信息、周期变化、症状表现与 KMI 评估。
               </p>
+              <p className="scene1-assessment-footnote-body">{perimenopauseAssessmentOverviewSummary}</p>
               <p className="scene1-assessment-footnote-body">
                 结果用于健康管理参考，不能替代医生诊断，如存在异常出血或持续不适，请及时就医。
               </p>

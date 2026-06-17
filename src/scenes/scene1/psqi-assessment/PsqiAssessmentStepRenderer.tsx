@@ -8,6 +8,7 @@ import {
   psqiSubjectiveQualityOptions,
 } from './psqiAssessmentContent';
 import { PsqiAssessmentState, getCurrentPsqiAssessmentStep } from './psqiAssessmentState';
+import { psqiAssessmentOverviewSummary } from '../assessmentOverviewCopy';
 
 type PsqiAssessmentStepRendererProps = {
   state: PsqiAssessmentState;
@@ -98,6 +99,7 @@ export function PsqiAssessmentStepRenderer({
         <div className="scene1-assessment-step-head scene1-assessment-step-head-compact">
           <h2 className="scene1-assessment-title">{psqiAssessmentQuestionnaireTitle}</h2>
           <p className="scene1-assessment-body-copy">{psqiAssessmentIntro}</p>
+          <p className="scene1-assessment-helper">{psqiAssessmentOverviewSummary}</p>
         </div>
       </section>
 

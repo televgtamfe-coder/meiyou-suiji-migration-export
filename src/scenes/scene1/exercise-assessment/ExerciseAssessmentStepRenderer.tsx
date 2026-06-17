@@ -5,6 +5,7 @@ import {
   exerciseAssessmentYesNoOptions,
 } from './exerciseAssessmentContent';
 import { ExerciseAssessmentState, getCurrentExerciseAssessmentStep } from './exerciseAssessmentState';
+import { exerciseAssessmentOverviewSummary } from '../assessmentOverviewCopy';
 
 type ExerciseAssessmentStepRendererProps = {
   state: ExerciseAssessmentState;
@@ -52,6 +53,7 @@ export function ExerciseAssessmentStepRenderer({
           <p className="scene1-assessment-body-copy">
             请回答“是”或“否”（回顾过去或当前状态），用 7 个标准问题快速判断当前是否适合直接开始运动。
           </p>
+          <p className="scene1-assessment-helper">{exerciseAssessmentOverviewSummary}</p>
         </div>
       </section>
 
