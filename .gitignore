@@ -4,3 +4,4 @@ node_modules/
 dist/
 .tmp/
 .github/workflows/pages.yml
+.vercel
